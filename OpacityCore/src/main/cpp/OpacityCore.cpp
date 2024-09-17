@@ -176,3 +176,11 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderProfile(JNIEnv *env,
     }
   }).detach();
 }
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_executeFlow(JNIEnv *env, jobject thiz, jstring flow) {
+    const char *flow_str = env->GetStringUTFChars(flow, nullptr);
+    std::thread([flow_str]() {
+        opacity_core::execute_workflow(flow_str);
+    }).detach();
+}

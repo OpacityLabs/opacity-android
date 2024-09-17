@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
@@ -22,7 +21,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             OpacityCoreExampleTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Button(onClick = { OpacityCore.getUberRiderProfile() }, modifier = Modifier.padding(innerPadding)) { Text(text = "Get uber driver profile") }
+                    Button(
+                            onClick = { OpacityCore.getUberRiderProfile() },
+                            modifier = Modifier.padding(innerPadding)
+                    ) { Text(text = "Get uber driver profile") }
+//                    Button(
+//                            onClick = { OpacityCore.sampleRedirection() },
+//                            modifier =
+//                                    Modifier.padding(innerPadding)
+//                    ) { Text(text = "Sample redirection") }
                 }
             }
         }
