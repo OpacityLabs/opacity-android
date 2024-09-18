@@ -173,6 +173,8 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderProfile(JNIEnv *env,
     int status = opacity_core::get_uber_rider_profile(&json, &proof, &err);
     if (status != opacity_core::OPACITY_OK) {
       __android_log_print(ANDROID_LOG_ERROR, "OpacityCore", "Error: %s", err);
+    } else {
+        __android_log_print(ANDROID_LOG_INFO, "OpacityCore", "🟩🟩🟩🟩 Res: %s", json);
     }
   }).detach();
 }
