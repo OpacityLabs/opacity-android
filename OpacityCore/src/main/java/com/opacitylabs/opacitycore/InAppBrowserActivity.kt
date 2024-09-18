@@ -113,7 +113,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                 "{\"event\": \"navigation\"," +
                         "\"url\": \"$url\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${
                     System.currentTimeMillis().toString()
-                }\"}}"
+                }\"}"
 
         OpacityCore.emitWebviewEvent(json)
     }
