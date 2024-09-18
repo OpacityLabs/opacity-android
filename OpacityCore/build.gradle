@@ -44,7 +44,7 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
     implementation libs.material
-    implementation "androidx.webkit:webkit:1.11.0"
+    implementation 'org.mozilla.geckoview:geckoview-nightly:132.0.20240918041351' // Replace with a valid version
     implementation libs.androidx.security.crypto
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

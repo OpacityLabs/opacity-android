@@ -8,26 +8,33 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
-import android.webkit.CookieManager
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Button
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.mozilla.geckoview.GeckoRuntime
+import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoSession.ContentDelegate
+import org.mozilla.geckoview.GeckoView
+
+
+//import org.mozilla.geckoview.WebRequestCallback
+//import org.mozilla.geckoview.WebRequestData
+//import org.mozilla.geckoview.WebRequestHeaders
 
 class InAppBrowserActivity : AppCompatActivity() {
 
-    private val closeReceiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == "com.opacitylabs.opacitycore.CLOSE_BROWSER") {
-                    finish()
-                }
+    private val closeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.opacitylabs.opacitycore.CLOSE_BROWSER") {
+                finish()
             }
         }
+    }
+
+    private lateinit var sRuntime: GeckoRuntime
+    private lateinit var geckoSession: GeckoSession
+    private lateinit var geckoView: GeckoView
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,78 +64,57 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setCustomView(closeButton, layoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
-        val webView = WebView(this)
-        setContentView(webView)
+//        geckoSession = GeckoSession().apply {
+//            open(GeckoSessionSettings())
+//            setCallback(object : GeckoSession.Callback() {
+//                override fun onPageLoadEnd(session: GeckoSession?, uri: Uri?) {
+//                    uri?.let { handleNavigation(it.toString()) }
+//                }
+//
+//                override fun onNavigation(uri: Uri?) {
+//                    uri?.let { handleNavigation(it.toString()) }
+//                }
+//            })
+//        }
 
+        // Initialize GeckoRuntime before using it
+        if (!::sRuntime.isInitialized) {
+            sRuntime = GeckoRuntime.create(this)
+        }
+
+        geckoSession = GeckoSession().apply {
+            setContentDelegate(object : ContentDelegate {})
+            open(sRuntime)
+        }
+
+        geckoView = GeckoView(this).apply {
+            setSession(geckoSession)
+        }
+//
+        setContentView(geckoView)
+//
         val url = intent.getStringExtra("url") ?: return
-        val headers = intent.getBundleExtra("headers")
+//        val headers = intent.getBundleExtra("headers")
+//
+//        val webRequestHeaders = WebRequestHeaders().apply {
+//            (headers?.keySet()?.associateWith { headers.getString(it) } ?: emptyMap()).forEach { (key, value) ->
+//                setHeader(key, value)
+//            }
+//            setHeader("X-Requested-With", "")
+//        }
 
-        webView.settings.javaScriptEnabled = true
+        geckoSession.loadUri(url)
+    }
 
-        val webViewClient =
-            object : WebViewClient() {
-                override fun shouldInterceptRequest(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): WebResourceResponse? {
-                    if (request == null) {
-                        return null
-                    }
-
-                    val originalHeaders = request.requestHeaders ?: emptyMap()
-
-                    // Remove or modify headers
-                    val headers = HashMap(originalHeaders)
-                    headers["X-Requested-With"] = ""
-
-                    val newRequest =
-                        object : WebResourceRequest {
-                            override fun getUrl(): Uri = request.url
-                            override fun isForMainFrame(): Boolean =
-                                request.isForMainFrame
-
-                            override fun hasGesture(): Boolean =
-                                request.hasGesture()
-
-                            override fun isRedirect(): Boolean =
-                                request.isRedirect
-
-                            override fun getMethod(): String = request.method
-                            override fun getRequestHeaders(): Map<String, String> = headers
-                        }
-
-                    // Proceed with the modified request
-                    return super.shouldInterceptRequest(view, newRequest)
-                }
-
-                override fun shouldOverrideUrlLoading(
-                    view: WebView,
-                    request: WebResourceRequest
-                ): Boolean {
-                    val newUrl = request.url.toString()
-                    handleNavigation(newUrl)
-                    return false
-                }
-
-                override fun onPageFinished(view: WebView, url: String) {
-                    super.onPageFinished(view, url)
-                    handleNavigation(url)
-                }
-            }
-
-        webView.webViewClient = webViewClient
-
-        val headersMap =
-            (headers?.keySet()?.associateWith { headers.getString(it) } ?: emptyMap())
-                .toMutableMap()
-        // important to remove to prevent android webview detection on services
-        headersMap["X-Requested-With"] = ""
-
-        val cookieManager = CookieManager.getInstance()
-        cookieManager.setAcceptCookie(true) // For devices below API level 21
-        cookieManager.setAcceptThirdPartyCookies(webView, true)
-
-        webView.loadUrl(url, headersMap)
+    private fun handleNavigation(url: String) {
+        // Assuming `OpacityCore.emitWebviewEvent` is available
+        val cookies = extractCookies(url)
+        val json =
+            "{\"event\": \"navigation\"," +
+                    "\"url\": \"$url\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${
+                        System.currentTimeMillis().toString()
+                    }\"}"
+        OpacityCore.emitWebviewEvent(json)
     }
 
     private fun convertToJsonString(map: Map<String, String>): String {
@@ -142,45 +128,19 @@ class InAppBrowserActivity : AppCompatActivity() {
         return jsonString.toString()
     }
 
-    private fun handleNavigation(url: String) {
-        CookieManager.getInstance().flush()
-        val cookies = extractCookies(url)
-        val json =
-            "{\"event\": \"navigation\"," +
-                    "\"url\": \"$url\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${
-                        System.currentTimeMillis().toString()
-                    }\"}"
-
-        OpacityCore.emitWebviewEvent(json)
-    }
-
     private fun extractDomainFromUrl(url: String): String {
         val uri = Uri.parse(url)
         return uri.host ?: ""
     }
 
     private fun extractCookies(url: String): Map<String, String> {
-        val cookieManager = CookieManager.getInstance()
-        val domain = extractDomainFromUrl(url)
-        val cookies = cookieManager.getCookie(domain)
-        val cookieMap = mutableMapOf<String, String>()
-        if (!cookies.isNullOrEmpty()) {
-            val cookiePairs = cookies.split(";")
-            for (cookiePair in cookiePairs) {
-                val pair = cookiePair.trim().split("=")
-                if (pair.size == 2) {
-                    val key = pair[0].trim()
-                    val value = pair[1].trim()
-                    cookieMap[key] = value
-                }
-            }
-        }
-        return cookieMap
+        // Implement cookie extraction for GeckoView if necessary
+        return emptyMap() // Placeholder
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
         LocalBroadcastManager.getInstance(this).unregisterReceiver(closeReceiver)
+        geckoSession.close()
     }
 }

@@ -32,18 +32,11 @@
             android:name="com.opacitylabs.opacitycore.InAppBrowserActivity"
             android:theme="@style/Theme.AppCompat.DayNight" />
     </application>
-    <queries>
-        <!-- Allow querying for browsers that support Custom Tabs -->
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <data android:scheme="http" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <data android:scheme="https" />
-        </intent>
-    </queries>
+    <meta-data
+        android:name="android.webkit.WebView.EnableSafeBrowsing"
+        android:value="true"/>
+    <meta-data
+        android:name="android.webkit.WebView.EnableSafeBrowsing"
+        android:value="true"/>
 
 </manifest>

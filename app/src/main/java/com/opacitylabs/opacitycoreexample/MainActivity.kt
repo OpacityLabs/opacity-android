@@ -15,7 +15,6 @@ import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
