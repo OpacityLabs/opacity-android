@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.mozilla.geckoview.GeckoRuntime
 
 object OpacityCore {
     private lateinit var appContext: Context
@@ -14,7 +15,7 @@ object OpacityCore {
     private lateinit var uri: Uri
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
-    private lateinit var browserIntent: Intent
+    lateinit var sRuntime: GeckoRuntime
 
     init {
         System.loadLibrary("OpacityCore")
@@ -22,8 +23,16 @@ object OpacityCore {
 
     fun initialize(context: Context, apiKey: String, dryRun: Boolean): Int {
         appContext = context
+        sRuntime = GeckoRuntime.create(context.applicationContext)
         cryptoManager = CryptoManager(appContext.applicationContext)
         return init(apiKey, dryRun)
+    }
+
+    fun getRuntime(): GeckoRuntime {
+        if (!::sRuntime.isInitialized) {
+            throw IllegalStateException("GeckoRuntime is not initialized. Call initialize() first.")
+        }
+        return sRuntime
     }
 
     fun securelySet(key: String, value: String) {
@@ -37,11 +46,6 @@ object OpacityCore {
     fun prepareInAppBrowser(url: String) {
         _url = url
         uri = Uri.parse(url)
-
-        //        val builder = CustomTabsIntent.Builder()
-        //        builder.setSendToExternalDefaultHandlerEnabled(true)
-        //        builder.setSession()
-        //        browserIntent = builder.build()
     }
 
     fun setBrowserHeader(key: String, value: String) {

@@ -1,32 +1,37 @@
-// Listen for web requests and extract cookies
 browser.webRequest.onHeadersReceived.addListener(
   function (details) {
-    let cookies = details.responseHeaders.filter(
+    let cookiesHeaders = details.responseHeaders.filter(
       (header) => header.name.toLowerCase() === "set-cookie"
     );
-    // console.warn("Received cookies:", cookies);
+
+    if (cookiesHeaders.length === 0) {
+      return;
+    }
+
+    let cookies = cookiesHeaders[0].value;
+
+    if (!cookies) {
+      return;
+    }
+
+    // cookies is a single string, e.g. "sampleCookie=sampleValue; Path=\/\nsampleCookie2=sampleValue2; Path=\/"
+    // We need to split and parse it to a single dictionary
+
+    // Parse cookies
+    let cookieDict = {};
+    cookies.split("\n").forEach((cookie) => {
+      let cookieParts = cookie.split(";")[0].split("=");
+      let cookieName = cookieParts[0].trim();
+      let cookieValue = cookieParts[1].trim();
+      cookieDict[cookieName] = cookieValue;
+    });
 
     // Send cookies back to the app (GeckoView) via messaging
-    browser.runtime.sendNativeMessage("gecko", { event: "cookies", cookies: cookies });
+    browser.runtime.sendNativeMessage("gecko", {
+      event: "cookies",
+      cookies: cookieDict,
+    });
   },
   { urls: ["<all_urls>"] }, // Intercept all URLs
   ["responseHeaders"]
 );
-
-//browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//  console.log("Message received in background script:", message);
-//  // Handle the message
-//  sendResponse({response: "Message received"});
-//  return true; // Keep the message channel open for asynchronous response
-//});
-
-// // Optionally, you can intercept outgoing requests and modify them
-// browser.webRequest.onBeforeSendHeaders.addListener(
-//   function (details) {
-//     // You can modify request headers if needed
-//     console.log("Request headers:", details.requestHeaders);
-//     return { requestHeaders: details.requestHeaders };
-//   },
-//   { urls: ["<all_urls>"] }, // Intercept all URLs
-//   ["blocking", "requestHeaders"]
-// );
