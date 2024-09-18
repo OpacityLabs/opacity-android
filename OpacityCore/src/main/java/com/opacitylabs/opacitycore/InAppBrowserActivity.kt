@@ -7,15 +7,20 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.ContentDelegate
+import org.mozilla.geckoview.GeckoSession.NavigationDelegate
 import org.mozilla.geckoview.GeckoView
+import org.mozilla.geckoview.WebExtension
+import org.mozilla.geckoview.WebRequestError
 
 
 //import org.mozilla.geckoview.WebRequestCallback
@@ -36,7 +41,8 @@ class InAppBrowserActivity : AppCompatActivity() {
     private lateinit var geckoSession: GeckoSession
     private lateinit var geckoView: GeckoView
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("WrongThread")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
@@ -64,46 +70,74 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setCustomView(closeButton, layoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
-//        geckoSession = GeckoSession().apply {
-//            open(GeckoSessionSettings())
-//            setCallback(object : GeckoSession.Callback() {
-//                override fun onPageLoadEnd(session: GeckoSession?, uri: Uri?) {
-//                    uri?.let { handleNavigation(it.toString()) }
-//                }
-//
-//                override fun onNavigation(uri: Uri?) {
-//                    uri?.let { handleNavigation(it.toString()) }
-//                }
-//            })
-//        }
-
-        // Initialize GeckoRuntime before using it
         if (!::sRuntime.isInitialized) {
             sRuntime = GeckoRuntime.create(this)
         }
 
-        geckoSession = GeckoSession().apply {
-            setContentDelegate(object : ContentDelegate {})
-            open(sRuntime)
+        sRuntime.webExtensionController.installBuiltIn("resource://android/assets/extension/").accept { ext ->
+            if (ext != null) {
+                Log.d("InAppBrowserActivity", "WebExtension successfully installed")
+                // Set the MessageDelegate or do further initialization here
+            } else {
+                Log.e("InAppBrowserActivity", "Failed to install WebExtension")
+            }
+            ext?.setMessageDelegate(
+            object : WebExtension.MessageDelegate {
+                override fun onMessage(
+                    nativeApp: String,
+                    message: Any,
+                    sender: WebExtension.MessageSender
+                ): GeckoResult<Any>? {
+                    Log.d("InAppBrowserActivity", "🟩 Message received ${message}")
+//                     if (message.event == "cookies") {
+//                        val cookies = message.data["cookies"] as List<Map<String, String>>
+//                        val json = "{\"event\": \"cookies\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${System.currentTimeMillis()}\"}"
+//                        OpacityCore.emitWebviewEvent(json)
+//                    }
+                    return super.onMessage(nativeApp, message, sender)
+                }
+//                override fun onMessage(
+//                    extension: GeckoWebExtension,
+//                    message: GeckoWebExtension.Message
+//                ) {
+//                    // Handle the cookies received from the web extension
+//                    if (message.event == "cookies") {
+//                        val cookies = message.data["cookies"] as List<Map<String, String>>
+//                        val json = "{\"event\": \"cookies\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${System.currentTimeMillis()}\"}"
+//                        OpacityCore.emitWebviewEvent(json)
+//                    }
+//                }
+            }, "gecko")
+
+            geckoSession = GeckoSession().apply {
+                setContentDelegate(object : ContentDelegate {})
+                open(sRuntime)
+            }
+
+            geckoSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                    hasUserGesture: Boolean
+                ) {
+                    if(url != null) {
+                        handleNavigation(url)
+                    }
+                }
+            }
+
+            geckoView = GeckoView(this).apply {
+                setSession(geckoSession)
+            }
+
+            setContentView(geckoView)
+            val url = intent.getStringExtra("url")!!
+
+            geckoSession.loadUri(url)
         }
 
-        geckoView = GeckoView(this).apply {
-            setSession(geckoSession)
-        }
-//
-        setContentView(geckoView)
-//
-        val url = intent.getStringExtra("url") ?: return
-//        val headers = intent.getBundleExtra("headers")
-//
-//        val webRequestHeaders = WebRequestHeaders().apply {
-//            (headers?.keySet()?.associateWith { headers.getString(it) } ?: emptyMap()).forEach { (key, value) ->
-//                setHeader(key, value)
-//            }
-//            setHeader("X-Requested-With", "")
-//        }
 
-        geckoSession.loadUri(url)
     }
 
     private fun handleNavigation(url: String) {
@@ -134,6 +168,14 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun extractCookies(url: String): Map<String, String> {
+//        geckoSession.evaluate("document.cookie;").then(result -> {
+//            // Process cookies here
+//            String cookies = result.toString();
+//            // Send cookies back to your app
+//        }).catch(e -> {
+//            // Handle error
+//        });
+//
         // Implement cookie extraction for GeckoView if necessary
         return emptyMap() // Placeholder
     }
