@@ -44,7 +44,7 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
     implementation libs.material
-    implementation libs.androidx.browser
+    implementation "androidx.webkit:webkit:1.11.0"
     implementation libs.androidx.security.crypto
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

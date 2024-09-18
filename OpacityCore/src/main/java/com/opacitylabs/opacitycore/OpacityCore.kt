@@ -5,39 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.Browser
-import android.util.Log
-import androidx.browser.customtabs.CustomTabsCallback
-import androidx.browser.customtabs.CustomTabsClient
-import androidx.browser.customtabs.CustomTabsIntent
-import androidx.browser.customtabs.CustomTabsServiceConnection
 
-//class NavigationCallback : CustomTabsCallback() {
-//    override fun onNavigationEvent(navigationEvent: Int, extras: Bundle?) {
-//        Log.d("CustomTabs", "Navigation event happened: " + navigationEvent)
-//        when (navigationEvent) {
-//            TAB_SHOWN -> Log.d("CustomTabs", "Tab shown")
-//            TAB_HIDDEN -> Log.d("CustomTabs", "Tab hidden")
-//            NAVIGATION_STARTED -> Log.d("CustomTabs", "Navigation started")
-//            NAVIGATION_FINISHED -> Log.d("CustomTabs", "Navigation finished")
-//            NAVIGATION_FAILED -> Log.d("CustomTabs", "Navigation failed")
-//            NAVIGATION_ABORTED -> Log.d("CustomTabs", "Navigation aborted")
-//        }
-//
-//        extras?.let {
-//        Log.d("CustomTabs", "Extras found! 🟦 ${it.keySet()}, isEmpty?: ${it.isEmpty}")
-//            for (key in it.keySet()) {
-//                val value = it.get(key)
-//                Log.d("CustomTabs","🟩 $key: $value")
-//            }
-//
-//            val url = it.getString("android.intent.extra.URL")
-//            url?.let { Log.d("CustomTabs", "URL: $url") }
-//            val cookies = it.getStringArrayList("android.webkit.extra.HTTP_HEADERS")
-//            cookies?.let { Log.d("CustomTabs", "Cookies: $cookies") }
-//        }
-//    }
-//}
 
 object OpacityCore {
     private lateinit var appContext: Context
@@ -45,7 +13,6 @@ object OpacityCore {
 
     private lateinit var uri: Uri
     private lateinit var _url: String
-    private lateinit var browserIntent: CustomTabsIntent
     private var headers: Bundle = Bundle()
 
     init {
@@ -70,10 +37,10 @@ object OpacityCore {
         _url = url
         uri = Uri.parse(url)
 
-        val builder = CustomTabsIntent.Builder()
-        builder.setSendToExternalDefaultHandlerEnabled(true)
+//        val builder = CustomTabsIntent.Builder()
+//        builder.setSendToExternalDefaultHandlerEnabled(true)
 //        builder.setSession()
-        browserIntent = builder.build()
+//        browserIntent = builder.build()
     }
 
     fun setBrowserHeader(key: String, value: String) {
@@ -84,30 +51,8 @@ object OpacityCore {
         val intent = Intent()
         intent.setClassName(appContext.packageName, "com.opacitylabs.opacitycore.InAppBrowserActivity")
         intent.putExtra("url", _url)
+        intent.putExtra("headers", headers)
         appContext.startActivity(intent)
-
-//        //        browserIntent.intent.putExtra(Browser.EXTRA_HEADERS, headers)
-//
-//        val session =
-//                CustomTabsClient.bindCustomTabsService(
-//                        appContext,
-//                        CustomTabsClient.getPackageName(appContext, null),
-//                        object : CustomTabsServiceConnection() {
-//                            override fun onCustomTabsServiceConnected(
-//                                    name: ComponentName,
-//                                    client: CustomTabsClient
-//                            ) {
-//                                val session = client.newSession(NavigationCallback())
-//                                session?.let {
-//                                    // Attach session to the intent
-//                                    val customTabsIntent = CustomTabsIntent.Builder(it).build()
-//                                    customTabsIntent.intent.putExtra(Browser.EXTRA_HEADERS, headers)
-//                                    customTabsIntent.launchUrl(appContext, uri)
-//                                }
-//                            }
-//                            override fun onServiceDisconnected(name: ComponentName) {}
-//                        }
-//                )
     }
 
     fun closeBrowser() {
