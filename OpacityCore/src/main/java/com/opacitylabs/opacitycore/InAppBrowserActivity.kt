@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -20,21 +21,21 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 class InAppBrowserActivity : AppCompatActivity() {
 
     private val closeReceiver =
-            object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    if (intent?.action == "com.opacitylabs.opacitycore.CLOSE_BROWSER") {
-                        finish()
-                    }
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == "com.opacitylabs.opacitycore.CLOSE_BROWSER") {
+                    finish()
                 }
             }
+        }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         localBroadcastManager.registerReceiver(
-                closeReceiver,
-                IntentFilter("com.opacitylabs.opacitycore.CLOSE_BROWSER")
+            closeReceiver,
+            IntentFilter("com.opacitylabs.opacitycore.CLOSE_BROWSER")
         )
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -43,16 +44,16 @@ class InAppBrowserActivity : AppCompatActivity() {
         closeButton.text = "Close"
         closeButton.setOnClickListener {
             val json =
-                    "{\"event\": \"close\", \"id\": \"${System.currentTimeMillis().toString()}\"}"
+                "{\"event\": \"close\", \"id\": \"${System.currentTimeMillis().toString()}\"}"
             OpacityCore.emitWebviewEvent(json)
         }
 
         val layoutParams =
-                ActionBar.LayoutParams(
-                        ActionBar.LayoutParams.WRAP_CONTENT,
-                        ActionBar.LayoutParams.WRAP_CONTENT,
-                        Gravity.START or Gravity.CENTER_VERTICAL
-                )
+            ActionBar.LayoutParams(
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                Gravity.START or Gravity.CENTER_VERTICAL
+            )
         supportActionBar?.setCustomView(closeButton, layoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
@@ -65,27 +66,61 @@ class InAppBrowserActivity : AppCompatActivity() {
         webView.settings.javaScriptEnabled = true
 
         val webViewClient =
-                object : WebViewClient() {
-                    override fun shouldOverrideUrlLoading(
-                            view: WebView,
-                            request: WebResourceRequest
-                    ): Boolean {
-                        val newUrl = request.url.toString()
-                        handleNavigation(newUrl)
-                        return false
+            object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    if (request == null) {
+                        return null
                     }
 
-                    override fun onPageFinished(view: WebView, url: String) {
-                        super.onPageFinished(view, url)
-                        handleNavigation(url)
-                    }
+                    val originalHeaders = request.requestHeaders ?: emptyMap()
+
+                    // Remove or modify headers
+                    val headers = HashMap(originalHeaders)
+                    headers["X-Requested-With"] = ""
+
+                    val newRequest =
+                        object : WebResourceRequest {
+                            override fun getUrl(): Uri = request.url
+                            override fun isForMainFrame(): Boolean =
+                                request.isForMainFrame
+
+                            override fun hasGesture(): Boolean =
+                                request.hasGesture()
+
+                            override fun isRedirect(): Boolean =
+                                request.isRedirect
+
+                            override fun getMethod(): String = request.method
+                            override fun getRequestHeaders(): Map<String, String> = headers
+                        }
+
+                    // Proceed with the modified request
+                    return super.shouldInterceptRequest(view, newRequest)
                 }
+
+                override fun shouldOverrideUrlLoading(
+                    view: WebView,
+                    request: WebResourceRequest
+                ): Boolean {
+                    val newUrl = request.url.toString()
+                    handleNavigation(newUrl)
+                    return false
+                }
+
+                override fun onPageFinished(view: WebView, url: String) {
+                    super.onPageFinished(view, url)
+                    handleNavigation(url)
+                }
+            }
 
         webView.webViewClient = webViewClient
 
         val headersMap =
-                (headers?.keySet()?.associateWith { headers.getString(it) } ?: emptyMap())
-                        .toMutableMap()
+            (headers?.keySet()?.associateWith { headers.getString(it) } ?: emptyMap())
+                .toMutableMap()
         // important to remove to prevent android webview detection on services
         headersMap["X-Requested-With"] = ""
 
@@ -106,14 +141,15 @@ class InAppBrowserActivity : AppCompatActivity() {
         jsonString.append("}")
         return jsonString.toString()
     }
+
     private fun handleNavigation(url: String) {
         CookieManager.getInstance().flush()
         val cookies = extractCookies(url)
         val json =
-                "{\"event\": \"navigation\"," +
-                        "\"url\": \"$url\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${
-                    System.currentTimeMillis().toString()
-                }\"}"
+            "{\"event\": \"navigation\"," +
+                    "\"url\": \"$url\", \"cookies\": ${convertToJsonString(cookies)}, \"id\": \"${
+                        System.currentTimeMillis().toString()
+                    }\"}"
 
         OpacityCore.emitWebviewEvent(json)
     }
