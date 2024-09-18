@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -21,15 +22,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             OpacityCoreExampleTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Button(
-                            onClick = { OpacityCore.getUberRiderProfile() },
-                            modifier = Modifier.padding(innerPadding)
-                    ) { Text(text = "Get uber driver profile") }
-//                    Button(
-//                            onClick = { OpacityCore.sampleRedirection() },
-//                            modifier =
-//                                    Modifier.padding(innerPadding)
-//                    ) { Text(text = "Sample redirection") }
+                    Column(modifier = Modifier.padding(innerPadding)) {
+                        Button(
+                                onClick = { OpacityCore.getUberRiderProfile() },
+
+                        ) { Text(text = "Get uber driver profile") }
+                        Button(
+                                onClick = { OpacityCore.sampleRedirection() },
+
+                        ) { Text(text = "Sample redirection") }
+                    }
                 }
             }
         }

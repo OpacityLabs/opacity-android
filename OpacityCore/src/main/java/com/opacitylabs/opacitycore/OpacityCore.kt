@@ -1,11 +1,11 @@
 package com.opacitylabs.opacitycore
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-
+import android.util.Log
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 object OpacityCore {
     private lateinit var appContext: Context
@@ -14,6 +14,7 @@ object OpacityCore {
     private lateinit var uri: Uri
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
+    private lateinit var browserIntent: Intent
 
     init {
         System.loadLibrary("OpacityCore")
@@ -37,10 +38,10 @@ object OpacityCore {
         _url = url
         uri = Uri.parse(url)
 
-//        val builder = CustomTabsIntent.Builder()
-//        builder.setSendToExternalDefaultHandlerEnabled(true)
-//        builder.setSession()
-//        browserIntent = builder.build()
+        //        val builder = CustomTabsIntent.Builder()
+        //        builder.setSendToExternalDefaultHandlerEnabled(true)
+        //        builder.setSession()
+        //        browserIntent = builder.build()
     }
 
     fun setBrowserHeader(key: String, value: String) {
@@ -49,16 +50,19 @@ object OpacityCore {
 
     fun presentBrowser() {
         val intent = Intent()
-        intent.setClassName(appContext.packageName, "com.opacitylabs.opacitycore.InAppBrowserActivity")
+        intent.setClassName(
+                appContext.packageName,
+                "com.opacitylabs.opacitycore.InAppBrowserActivity"
+        )
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         appContext.startActivity(intent)
     }
 
     fun closeBrowser() {
-        // Close the browser by sending an empty intent
-        val intent = Intent()
-        appContext.startActivity(intent)
+        val closeIntent = Intent("com.opacitylabs.opacitycore.CLOSE_BROWSER")
+        LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
+        Log.d("OpacityCore", "Intent dispatched")
     }
 
     fun sampleRedirection() {
@@ -87,4 +91,5 @@ object OpacityCore {
     external fun init(apiKey: String, dryRun: Boolean): Int
     external fun getUberRiderProfile()
     external fun executeFlow(flow: String)
+    external fun emitWebviewEvent(eventJson: String)
 }

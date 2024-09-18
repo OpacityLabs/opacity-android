@@ -184,3 +184,10 @@ Java_com_opacitylabs_opacitycore_OpacityCore_executeFlow(JNIEnv *env, jobject th
         opacity_core::execute_workflow(flow_str);
     }).detach();
 }
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_emitWebviewEvent(JNIEnv *env, jobject thiz,
+                                                                       jstring event_json) {
+    const char *json = env->GetStringUTFChars(event_json, nullptr);
+    opacity_core::emit_webview_event(json);
+}
