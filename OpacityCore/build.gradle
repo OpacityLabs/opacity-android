@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id 'maven-publish'
 }
 
 android {
@@ -49,4 +50,50 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
+}
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId = 'com.github.OpacityLabs'
+            artifactId = 'OpacityCore'
+            version = '3.5.3'
+
+            from components.release
+
+            pom {
+                name.set('OpacityCore')
+                description.set('Core of Opacity Labs')
+                url.set('https://github.com/OpacityLabs/opacity-android') // Replace with your GitHub URL
+                licenses {
+                    license {
+                        name.set('The MIT License')
+                        url.set('https://opensource.org/licenses/MIT')
+                    }
+                }
+                developers {
+                    developer {
+                        id.set('ospfranco') // Replace with your ID
+                        name.set('Oscar Franco') // Replace with your name
+                        email.set('ospfranco@gmail.com') // Replace with your email
+                    }
+                }
+                scm {
+                    connection.set('scm:git:git://github.com/OpacityLabs/opacity-android.git') // Replace with your GitHub URL
+                    developerConnection.set('scm:git:ssh://github.com/OpacityLabs/opacity-android.git') // Replace with your GitHub URL
+                    url.set('https://github.com/OpacityLabs/opacity-android') // Replace with your GitHub URL
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'JitPack'
+            url = uri('https://jitpack.io')
+            credentials {
+                username = project.findProperty("jitpackUsername") ?: ""
+                password = project.findProperty("jitpackPassword") ?: ""
+            }
+        }
+    }
 }
