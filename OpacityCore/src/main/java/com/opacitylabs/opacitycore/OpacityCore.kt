@@ -2,20 +2,21 @@ package com.opacitylabs.opacitycore
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.mozilla.geckoview.GeckoRuntime
 
+
 object OpacityCore {
+
     private lateinit var appContext: Context
     private lateinit var cryptoManager: CryptoManager
-
-    private lateinit var uri: Uri
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
-    lateinit var sRuntime: GeckoRuntime
+    private lateinit var sRuntime: GeckoRuntime
 
     init {
         System.loadLibrary("OpacityCore")
@@ -44,8 +45,8 @@ object OpacityCore {
     }
 
     fun prepareInAppBrowser(url: String) {
+        headers = Bundle()
         _url = url
-        uri = Uri.parse(url)
     }
 
     fun setBrowserHeader(key: String, value: String) {
@@ -69,31 +70,16 @@ object OpacityCore {
         Log.d("OpacityCore", "Intent dispatched")
     }
 
-    fun sampleRedirection() {
-        val flow =
-            "{\n" +
-                    "          \"version\": \"1.0.0\",\n" +
-                    "          \"name\": \"authWebDriver\",\n" +
-                    "          \"context_generator\": {},\n" +
-                    "          \"steps\": [\n" +
-                    "            {\n" +
-                    "            \"name\": \"webview\",\n" +
-                    "            \"url\": \"http://localhost:8666/uber_redirect\",\n" +
-                    "            \"is_browser_step\": true,\n" +
-                    "            \"await_events\": [\n" +
-                    "              {\n" +
-                    "              \"event\": \"navigation\",\n" +
-                    "              \"base_url_ios\": \"uberlogin://auth3.uber.com/applogin\"\n" +
-                    "              }\n" +
-                    "            ]\n" +
-                    "            }\n" +
-                    "          ]\n" +
-                    "          }"
-        executeFlow(flow)
+    suspend fun getUberRiderProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) {
+            getUberRiderProfileNative()
+        }
     }
 
-    external fun init(apiKey: String, dryRun: Boolean): Int
-    external fun getUberRiderProfile()
+
+    private external fun init(apiKey: String, dryRun: Boolean): Int
     external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
+    private external fun getUberRiderProfileNative(): OpacityResponse
+//    external fun getUberRiderTripHistory()
 }
