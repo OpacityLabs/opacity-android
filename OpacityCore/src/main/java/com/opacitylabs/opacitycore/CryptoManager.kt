@@ -2,8 +2,8 @@ package com.opacitylabs.opacitycore
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.MasterKey
 import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 
 class CryptoManager(context: Context) {
     private val masterKey: MasterKey

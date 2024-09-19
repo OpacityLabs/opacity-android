@@ -1,4 +1,5 @@
 package com.opacitylabs.opacitycore
+
 import org.json.JSONObject
 
 object JsonUtils {
