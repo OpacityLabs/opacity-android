@@ -1,5 +1,6 @@
 package com.opacitylabs.opacitycoreexample
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -17,8 +18,29 @@ import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycore.OpacityResponse
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MainActivity : ComponentActivity() {
+    fun loadEnvFile(context: Context): Map<String, String> {
+        val envMap = mutableMapOf<String, String>()
+
+        // Open the .env file from assets or raw folder
+        val inputStream =
+            context.assets.open("env") // Or context.resources.openRawResource(R.raw.env)
+
+        BufferedReader(InputStreamReader(inputStream)).use { reader ->
+            reader.lineSequence().forEach { line ->
+                if (line.isNotBlank() && !line.startsWith("#")) {
+                    val (key, value) = line.split("=", limit = 2)
+                    envMap[key.trim()] = value.trim()
+                }
+            }
+        }
+
+        return envMap
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -29,22 +51,26 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-
                                     val res: OpacityResponse = OpacityCore.getUberRiderProfile()
                                     Log.d("MainActivity", res.proof ?: "No proof")
                                     Log.d("MainActivity", res.err ?: "No err")
                                 }
                             },
                         ) { Text(text = "Get uber driver profile") }
-//                        Button(
-//                                onClick = { OpacityCore.sampleRedirection() },
-//                        ) { Text(text = "Sample redirection") }
+                        //                        Button(
+                        //                                onClick = {
+                        // OpacityCore.sampleRedirection() },
+                        //                        ) { Text(text = "Sample redirection") }
                     }
                 }
             }
         }
 
-        val result = OpacityCore.initialize(this, "sample_key", false)
+        val dotenv = loadEnvFile(this)
+        val opacityApiKey = dotenv["OPACITY_API_KEY"]
+        requireNotNull(opacityApiKey) { "Opacity API key is null" }
+
+        val result = OpacityCore.initialize(this, opacityApiKey, false)
         println("Core init status: " + result)
     }
 }

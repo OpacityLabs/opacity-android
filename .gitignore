@@ -13,4 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
-OpacityCore/src/main/jniLibs
+**/env
+# OpacityCore/src/main/jniLibs

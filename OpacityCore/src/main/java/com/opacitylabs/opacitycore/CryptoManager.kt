@@ -40,15 +40,15 @@ class CryptoManager(context: Context) {
             .build()
     }
 
-    fun set(key: String, value: String, withBiometrics: Boolean = false) {
+    fun set(key: String, value: String) {
         encryptedPrefs.edit().putString(key, value).apply()
     }
 
-    fun get(key: String, withBiometrics: Boolean = false): String? {
+    fun get(key: String): String? {
         return encryptedPrefs.getString(key, null)
     }
 
-    fun delete(key: String, withBiometrics: Boolean = false) {
+    fun delete(key: String) {
         encryptedPrefs.edit().putString(key, null).apply()
     }
 
