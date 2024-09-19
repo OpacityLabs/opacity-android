@@ -1,8 +1,8 @@
 #include "opacity.h"
 #include <android/log.h>
+#include <future>
 #include <jni.h>
 #include <thread>
-#include <future>
 
 JavaVM *java_vm;
 jobject java_object;
@@ -97,7 +97,8 @@ extern "C" const char *secure_get(const char *key) {
     jmethodID set_method = env->GetMethodID(
             jOpacityCore, "securelyGet", "(Ljava/lang/String;)Ljava/lang/String;");
 
-    auto res = (jstring) env->CallObjectMethod(java_object, set_method, string2jstring(env, key));
+    auto res = (jstring) env->CallObjectMethod(java_object, set_method,
+                                               string2jstring(env, key));
 
     if (res == nullptr) {
         return nullptr;
@@ -127,8 +128,9 @@ extern "C" void android_set_request_header(const char *key, const char *value) {
     jclass jOpacityCore = env->GetObjectClass(java_object);
 
     // Get the method ID for the method you want to call
-    jmethodID method = env->GetMethodID(
-            jOpacityCore, "setBrowserHeader", "(Ljava/lang/String;Ljava/lang/String;)V");
+    jmethodID method =
+            env->GetMethodID(jOpacityCore, "setBrowserHeader",
+                             "(Ljava/lang/String;Ljava/lang/String;)V");
 
     // Call the method with the necessary parameters
     jstring jkey = env->NewStringUTF(key);
@@ -142,8 +144,7 @@ extern "C" void android_present_webview() {
     jclass jOpacityCore = env->GetObjectClass(java_object);
 
     // Get the method ID for the method you want to call
-    jmethodID method = env->GetMethodID(
-            jOpacityCore, "presentBrowser", "()V");
+    jmethodID method = env->GetMethodID(jOpacityCore, "presentBrowser", "()V");
 
     // Call the method with the necessary parameters
     env->CallVoidMethod(java_object, method);
@@ -155,8 +156,7 @@ extern "C" void android_close_webview() {
     jclass jOpacityCore = env->GetObjectClass(java_object);
 
     // Get the method ID for the method you want to call
-    jmethodID method = env->GetMethodID(
-            jOpacityCore, "closeBrowser", "()V");
+    jmethodID method = env->GetMethodID(jOpacityCore, "closeBrowser", "()V");
 
     // Call the method with the necessary parameters
     env->CallVoidMethod(java_object, method);
@@ -172,51 +172,156 @@ Java_com_opacitylabs_opacitycore_OpacityCore_init(JNIEnv *env, jobject thiz,
     return result;
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_executeFlow(JNIEnv *env, jobject thiz, jstring flow) {
+extern "C" JNIEXPORT void JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_executeFlow(JNIEnv *env,
+                                                         jobject thiz,
+                                                         jstring flow) {
     const char *flow_str = env->GetStringUTFChars(flow, nullptr);
     std::thread([flow_str]() {
         opacity_core::execute_workflow(flow_str);
     }).detach();
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_emitWebviewEvent(JNIEnv *env, jobject thiz,
-                                                              jstring event_json) {
+extern "C" JNIEXPORT void JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_emitWebviewEvent(
+        JNIEnv *env, jobject thiz, jstring event_json) {
     const char *json = env->GetStringUTFChars(event_json, nullptr);
     opacity_core::emit_webview_event(json);
 }
 
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderProfileNative(JNIEnv *env,
-                                                                       jobject thiz) {
+jobject createOpacityResponse(JNIEnv *env, int status, const char *json,
+                              const char *proof, const char *err) {
+    jclass opacityResponseClass =
+            env->FindClass("com/opacitylabs/opacitycore/OpacityResponse");
 
-    char *json;
-    char *proof;
-    char *err;
-    int status = opacity_core::get_uber_rider_profile(&json, &proof, &err);
-
-    jclass opacityResponseClass = env->FindClass("com/opacitylabs/opacitycore/OpacityResponse");
-
-    jmethodID constructor = env->GetMethodID(opacityResponseClass, "<init>",
-                                             "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+    jmethodID constructor = env->GetMethodID(
+            opacityResponseClass, "<init>",
+            "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
 
     jobject opacityResponse;
+    jstring json2, proof2, err2;
     if (status == opacity_core::OPACITY_OK) {
-        jstring json2 = env->NewStringUTF(json);
-        jstring proof2 = env->NewStringUTF(nullptr);
-        jstring err2 = env->NewStringUTF(nullptr);
-        opacityResponse = env->NewObject(opacityResponseClass, constructor, status, json2,
-                                         proof2, err2);
+        json2 = env->NewStringUTF(json);
+        proof2 = env->NewStringUTF(nullptr);
+        err2 = env->NewStringUTF(nullptr);
     } else {
-        jstring json2 = env->NewStringUTF(nullptr);
-        jstring proof2 = env->NewStringUTF(nullptr);
-        jstring err2 = env->NewStringUTF(err);
-        opacityResponse = env->NewObject(opacityResponseClass, constructor, status, json2,
-                                         proof2, err2);
+        json2 = env->NewStringUTF(nullptr);
+        proof2 = env->NewStringUTF(nullptr);
+        err2 = env->NewStringUTF(err);
     }
+    opacityResponse = env->NewObject(opacityResponseClass, constructor, status,
+                                     json2, proof2, err2);
 
     return opacityResponse;
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderProfileNative(
+        JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_uber_rider_profile(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderTripHistoryNative(
+        JNIEnv *env, jobject thiz, jint limit, jint offset) {
+    char *json, *proof, *err;
+    int limit_int = static_cast<int>(limit);
+    int offset_int = static_cast<int>(offset);
+    int status = opacity_core::get_uber_rider_trip_history(limit_int, offset_int, &json, &proof,
+                                                           &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderTripNative(JNIEnv *env, jobject thiz,
+                                                                    jstring id) {
+    char *json, *proof, *err;
+    const char *id_str = env->GetStringUTFChars(id, nullptr);
+    int status = opacity_core::get_uber_rider_trip(id_str, &json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getUberDriverProfileNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_uber_driver_profile(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getUberDriverTripsNative(JNIEnv *env, jobject thiz,
+                                                                      jstring start_date,
+                                                                      jstring end_date,
+                                                                      jstring cursor) {
+    char *json, *proof, *err;
+    const char *start_date_str = env->GetStringUTFChars(start_date, nullptr);
+    const char *end_date_str = env->GetStringUTFChars(end_date, nullptr);
+    const char *cursor_str = env->GetStringUTFChars(cursor, nullptr);
+    int status = opacity_core::get_uber_driver_trips(start_date_str, end_date_str, cursor_str,
+                                                     &json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getRedditAccountNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_reddit_account(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getRedditFollowedSubredditsNative(JNIEnv *env,
+                                                                               jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_reddit_followed_subreddits(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getRedditCommentsNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_reddit_comments(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getRedditPostsNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_reddit_posts(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaAccountNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_zabka_account(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaPointsNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_zabka_points(&json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
 }

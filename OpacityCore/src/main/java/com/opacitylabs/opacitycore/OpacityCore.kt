@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mozilla.geckoview.GeckoRuntime
 
-
 object OpacityCore {
 
     private lateinit var appContext: Context
@@ -56,8 +55,8 @@ object OpacityCore {
     fun presentBrowser() {
         val intent = Intent()
         intent.setClassName(
-            appContext.packageName,
-            "com.opacitylabs.opacitycore.InAppBrowserActivity"
+                appContext.packageName,
+                "com.opacitylabs.opacitycore.InAppBrowserActivity"
         )
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
@@ -71,15 +70,70 @@ object OpacityCore {
     }
 
     suspend fun getUberRiderProfile(): OpacityResponse {
-        return withContext(Dispatchers.IO) {
-            getUberRiderProfileNative()
-        }
+        return withContext(Dispatchers.IO) { getUberRiderProfileNative() }
     }
 
+    suspend fun getUberRiderTripHistory(limit: Int, offset: Int): OpacityResponse {
+        return withContext(Dispatchers.IO) { getUberRiderTripHistoryNative(limit, offset) }
+    }
+
+    suspend fun getUberRiderTrip(id: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getUberRiderTripNative(id) }
+    }
+
+    suspend fun getUberDriverProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getUberDriverProfileNative() }
+    }
+
+    suspend fun getUberDriverTrips(
+            startDate: String,
+            endDate: String,
+            cursor: String
+    ): OpacityResponse {
+        return withContext(Dispatchers.IO) { getUberDriverTripsNative(startDate, endDate, cursor) }
+    }
+
+    suspend fun getRedditAccount(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getRedditAccountNative() }
+    }
+
+    suspend fun getRedditFollowedSubreddits(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getRedditFollowedSubredditsNative() }
+    }
+
+    suspend fun getRedditComments(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getRedditCommentsNative() }
+    }
+
+    suspend fun getRedditPosts(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getRedditPostsNative() }
+    }
+
+    suspend fun getZabkaAccount(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getZabkaAccountNative() }
+    }
+
+    suspend fun getZabkaPoints(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getZabkaPointsNative() }
+    }
 
     private external fun init(apiKey: String, dryRun: Boolean): Int
-    external fun executeFlow(flow: String)
+    private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
     private external fun getUberRiderProfileNative(): OpacityResponse
-//    external fun getUberRiderTripHistory()
+    private external fun getUberRiderTripHistoryNative(limit: Int, offset: Int): OpacityResponse
+    private external fun getUberRiderTripNative(id: String): OpacityResponse
+    private external fun getUberDriverProfileNative(): OpacityResponse
+    private external fun getUberDriverTripsNative(
+            startDate: String,
+            endDate: String,
+            cursor: String
+    ): OpacityResponse
+
+    private external fun getRedditAccountNative(): OpacityResponse
+    private external fun getRedditFollowedSubredditsNative(): OpacityResponse
+    private external fun getRedditCommentsNative(): OpacityResponse
+    private external fun getRedditPostsNative(): OpacityResponse
+    private external fun getZabkaAccountNative(): OpacityResponse
+    private external fun getZabkaPointsNative(): OpacityResponse
 }
