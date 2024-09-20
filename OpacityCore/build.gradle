@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
     id 'maven-publish'
 }
 
@@ -26,17 +26,26 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
             version '3.22.1'
+        }
+    }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
         }
     }
 }
@@ -45,7 +54,7 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
     implementation libs.material
-    implementation 'org.mozilla.geckoview:geckoview-nightly:132.0.20240918041351' // Replace with a valid version
+    implementation libs.geckoview.nightly
     implementation libs.androidx.security.crypto
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
@@ -55,44 +64,12 @@ dependencies {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId = 'com.github.OpacityLabs'
-            artifactId = 'OpacityCore'
+            groupId = 'com.opacitylabs'
+            artifactId = 'opacitycore'
             version = '3.5.3'
 
-            from components.release
-
-            pom {
-                name.set('OpacityCore')
-                description.set('Core of Opacity Labs')
-                url.set('https://github.com/OpacityLabs/opacity-android') // Replace with your GitHub URL
-                licenses {
-                    license {
-                        name.set('The MIT License')
-                        url.set('https://opensource.org/licenses/MIT')
-                    }
-                }
-                developers {
-                    developer {
-                        id.set('ospfranco') // Replace with your ID
-                        name.set('Oscar Franco') // Replace with your name
-                        email.set('ospfranco@gmail.com') // Replace with your email
-                    }
-                }
-                scm {
-                    connection.set('scm:git:git://github.com/OpacityLabs/opacity-android.git') // Replace with your GitHub URL
-                    developerConnection.set('scm:git:ssh://github.com/OpacityLabs/opacity-android.git') // Replace with your GitHub URL
-                    url.set('https://github.com/OpacityLabs/opacity-android') // Replace with your GitHub URL
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = 'JitPack'
-            url = uri('https://jitpack.io')
-            credentials {
-                username = project.findProperty("jitpackUsername") ?: ""
-                password = project.findProperty("jitpackPassword") ?: ""
+            afterEvaluate {
+                from components.release
             }
         }
     }
