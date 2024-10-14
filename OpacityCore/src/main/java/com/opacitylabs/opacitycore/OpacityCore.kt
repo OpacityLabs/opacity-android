@@ -55,8 +55,8 @@ object OpacityCore {
     fun presentBrowser() {
         val intent = Intent()
         intent.setClassName(
-                appContext.packageName,
-                "com.opacitylabs.opacitycore.InAppBrowserActivity"
+            appContext.packageName,
+            "com.opacitylabs.opacitycore.InAppBrowserActivity"
         )
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
@@ -86,9 +86,9 @@ object OpacityCore {
     }
 
     suspend fun getUberDriverTrips(
-            startDate: String,
-            endDate: String,
-            cursor: String
+        startDate: String,
+        endDate: String,
+        cursor: String
     ): OpacityResponse {
         return withContext(Dispatchers.IO) { getUberDriverTripsNative(startDate, endDate, cursor) }
     }
@@ -120,14 +120,21 @@ object OpacityCore {
     private external fun init(apiKey: String, dryRun: Boolean): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
+    private external fun getUberFareEstimate(
+        pickupLatitude: Double,
+        pickupLongitude: Double,
+        destinationLatitude: Double,
+        destinationLongitude: Double
+    ): OpacityResponse
+
     private external fun getUberRiderProfileNative(): OpacityResponse
     private external fun getUberRiderTripHistoryNative(limit: Int, offset: Int): OpacityResponse
     private external fun getUberRiderTripNative(id: String): OpacityResponse
     private external fun getUberDriverProfileNative(): OpacityResponse
     private external fun getUberDriverTripsNative(
-            startDate: String,
-            endDate: String,
-            cursor: String
+        startDate: String,
+        endDate: String,
+        cursor: String
     ): OpacityResponse
 
     private external fun getRedditAccountNative(): OpacityResponse

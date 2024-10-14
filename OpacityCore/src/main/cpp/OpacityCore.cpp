@@ -325,3 +325,21 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaPointsNative(JNIEnv *env, j
 
     return createOpacityResponse(env, status, json, proof, err);
 }
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getUberFareEstimate(JNIEnv *env, jobject thiz,
+                                                                 jdouble j_pickup_latitude,
+                                                                 jdouble j_pickup_longitude,
+                                                                 jdouble j_destination_latitude,
+                                                                 jdouble j_destination_longitude) {
+    char *json, *proof, *err;
+    double pickup_latitude = static_cast<double>(j_pickup_latitude);
+    double pickup_longitude = static_cast<double>(j_pickup_longitude);
+    double destination_latitude = static_cast<double>(j_destination_latitude);
+    double destination_longitude = static_cast<double>(j_destination_longitude);
+    int status = opacity_core::get_uber_fare_estimate(pickup_latitude, pickup_longitude,
+                                                      destination_latitude, destination_longitude,
+                                                      &json, &proof, &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
