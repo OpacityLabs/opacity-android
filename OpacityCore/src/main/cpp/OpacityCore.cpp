@@ -226,11 +226,10 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderProfileNative(
 
 extern "C" JNIEXPORT jobject JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderTripHistoryNative(
-        JNIEnv *env, jobject thiz, jint limit, jint offset) {
+        JNIEnv *env, jobject thiz, jstring cursor) {
     char *json, *proof, *err;
-    int limit_int = static_cast<int>(limit);
-    int offset_int = static_cast<int>(offset);
-    int status = opacity_core::get_uber_rider_trip_history(limit_int, offset_int, &json, &proof,
+    const char *cursor_str = env->GetStringUTFChars(cursor, nullptr);
+    int status = opacity_core::get_uber_rider_trip_history(cursor_str, &json, &proof,
                                                            &err);
 
     return createOpacityResponse(env, status, json, proof, err);

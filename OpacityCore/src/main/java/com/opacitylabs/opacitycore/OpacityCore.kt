@@ -73,8 +73,8 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getUberRiderProfileNative() }
     }
 
-    suspend fun getUberRiderTripHistory(limit: Int, offset: Int): OpacityResponse {
-        return withContext(Dispatchers.IO) { getUberRiderTripHistoryNative(limit, offset) }
+    suspend fun getUberRiderTripHistory(cursor: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getUberRiderTripHistoryNative(cursor) }
     }
 
     suspend fun getUberRiderTrip(id: String): OpacityResponse {
@@ -128,7 +128,7 @@ object OpacityCore {
     ): OpacityResponse
 
     private external fun getUberRiderProfileNative(): OpacityResponse
-    private external fun getUberRiderTripHistoryNative(limit: Int, offset: Int): OpacityResponse
+    private external fun getUberRiderTripHistoryNative(cursor: String): OpacityResponse
     private external fun getUberRiderTripNative(id: String): OpacityResponse
     private external fun getUberDriverProfileNative(): OpacityResponse
     private external fun getUberDriverTripsNative(
