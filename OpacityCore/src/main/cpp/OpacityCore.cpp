@@ -7,13 +7,6 @@
 JavaVM *java_vm;
 jobject java_object;
 
-struct OpacityResponse {
-    int status;
-    const char *json;
-    const char *proof;
-    const char *err;
-};
-
 void DeferThreadDetach(JNIEnv *env) {
     static pthread_key_t thread_key;
 
@@ -55,7 +48,7 @@ JNIEnv *GetJniEnv() {
     // g_vm is a global.
     auto get_env_result = java_vm->GetEnv((void **) &env, JNI_VERSION_1_6);
     if (get_env_result == JNI_EDETACHED) {
-        if (java_vm->AttachCurrentThread(&env, NULL) == JNI_OK) {
+        if (java_vm->AttachCurrentThread(&env, nullptr) == JNI_OK) {
             DeferThreadDetach(env);
         } else {
             // Failed to attach thread. Throw an exception if you want to.
