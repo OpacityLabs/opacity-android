@@ -332,13 +332,67 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getUberFareEstimate(JNIEnv *env, jo
                                                                  jdouble j_destination_latitude,
                                                                  jdouble j_destination_longitude) {
     char *json, *proof, *err;
-    double pickup_latitude = static_cast<double>(j_pickup_latitude);
-    double pickup_longitude = static_cast<double>(j_pickup_longitude);
-    double destination_latitude = static_cast<double>(j_destination_latitude);
-    double destination_longitude = static_cast<double>(j_destination_longitude);
+    auto pickup_latitude = static_cast<double>(j_pickup_latitude);
+    auto pickup_longitude = static_cast<double>(j_pickup_longitude);
+    auto destination_latitude = static_cast<double>(j_destination_latitude);
+    auto destination_longitude = static_cast<double>(j_destination_longitude);
     int status = opacity_core::get_uber_fare_estimate(pickup_latitude, pickup_longitude,
                                                       destination_latitude, destination_longitude,
                                                       &json, &proof, &err);
 
+    return createOpacityResponse(env, status, json, proof, err);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getCartaProfileNative(JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_carta_profile(&json, &proof, &err);
+    return createOpacityResponse(env, status, json, proof, err);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getCartaOrganizationsNative(JNIEnv *env,
+                                                                         jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_carta_organizations(&json, &proof, &err);
+    return createOpacityResponse(env, status, json, proof, err);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getCartaPortfolioInvestmentsNative(JNIEnv *env,
+                                                                                jobject thiz,
+                                                                                jstring firm_id,
+                                                                                jstring account_id) {
+    char *json, *proof, *err;
+    const char *firm_id_str = env->GetStringUTFChars(firm_id, nullptr);
+    const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
+
+    int status = opacity_core::get_carta_portfolio_investments(firm_id_str, account_id_str, &json,
+                                                               &proof, &err);
+    return createOpacityResponse(env, status, json, proof, err);
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getCartaHoldingsCompaniesNative(JNIEnv *env,
+                                                                             jobject thiz,
+                                                                             jstring account_id) {
+    char *json, *proof, *err;
+    const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
+    int status = opacity_core::get_carta_holdings_companies(account_id_str, &json, &proof, &err);
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getCartaCorporationSecuritiesNative(JNIEnv *env,
+                                                                                 jobject thiz,
+                                                                                 jstring account_id,
+                                                                                 jstring corporation_id) {
+    char *json, *proof, *err;
+    const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
+    const char *corporation_id_str = env->GetStringUTFChars(corporation_id, nullptr);
+    int status = opacity_core::get_carta_corporation_securities(account_id_str, corporation_id_str,
+                                                                &json, &proof, &err);
     return createOpacityResponse(env, status, json, proof, err);
 }

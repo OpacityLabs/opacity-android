@@ -117,6 +117,34 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getZabkaPointsNative() }
     }
 
+    suspend fun getCartaProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaProfileNative() }
+    }
+
+    suspend fun getCartaOrganizations(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaOrganizationsNative() }
+    }
+
+    suspend fun getCartaPortfolioInvestments(firmId: String, accountId: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaPortfolioInvestmentsNative(firmId, accountId) }
+    }
+
+    suspend fun getCartaHoldingsCompanies(accountId: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaHoldingsCompaniesNative(accountId) }
+    }
+
+    suspend fun getCartaCorporationSecurities(
+        accountId: String,
+        corporationId: String
+    ): OpacityResponse {
+        return withContext(Dispatchers.IO) {
+            getCartaCorporationSecuritiesNative(
+                accountId,
+                corporationId
+            )
+        }
+    }
+
     private external fun init(apiKey: String, dryRun: Boolean): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
@@ -141,6 +169,22 @@ object OpacityCore {
     private external fun getRedditFollowedSubredditsNative(): OpacityResponse
     private external fun getRedditCommentsNative(): OpacityResponse
     private external fun getRedditPostsNative(): OpacityResponse
+
+    // Zabka
     private external fun getZabkaAccountNative(): OpacityResponse
     private external fun getZabkaPointsNative(): OpacityResponse
+
+    // carta
+    private external fun getCartaProfileNative(): OpacityResponse
+    private external fun getCartaOrganizationsNative(): OpacityResponse
+    private external fun getCartaPortfolioInvestmentsNative(
+        firmId: String,
+        accountId: String
+    ): OpacityResponse
+
+    private external fun getCartaHoldingsCompaniesNative(accountId: String): OpacityResponse
+    private external fun getCartaCorporationSecuritiesNative(
+        accountId: String,
+        corporationId: String
+    ): OpacityResponse
 }
