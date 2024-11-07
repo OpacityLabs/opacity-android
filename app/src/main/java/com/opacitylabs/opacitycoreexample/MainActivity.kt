@@ -22,12 +22,10 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class MainActivity : ComponentActivity() {
-    fun loadEnvFile(context: Context): Map<String, String> {
+    private fun loadEnvFile(context: Context): Map<String, String> {
         val envMap = mutableMapOf<String, String>()
-
-        // Open the .env file from assets or raw folder
         val inputStream =
-            context.assets.open("env") // Or context.resources.openRawResource(R.raw.env)
+            context.assets.open("env")
 
         BufferedReader(InputStreamReader(inputStream)).use { reader ->
             reader.lineSequence().forEach { line ->
@@ -57,10 +55,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get uber driver profile") }
-                        //                        Button(
-                        //                                onClick = {
-                        // OpacityCore.sampleRedirection() },
-                        //                        ) { Text(text = "Sample redirection") }
                     }
                 }
             }
@@ -70,7 +64,6 @@ class MainActivity : ComponentActivity() {
         val opacityApiKey = dotenv["OPACITY_API_KEY"]
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
-        val result = OpacityCore.initialize(this, opacityApiKey, false)
-        println("Core init status: " + result)
+        OpacityCore.initialize(this, opacityApiKey, false, OpacityCore.Environment.STAGING)
     }
 }

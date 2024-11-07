@@ -9,7 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mozilla.geckoview.GeckoRuntime
 
+
 object OpacityCore {
+    enum class Environment {
+        TEST,
+        LOCAL,
+        STAGING,
+        PRODUCTION,
+    }
 
     private lateinit var appContext: Context
     private lateinit var cryptoManager: CryptoManager
@@ -21,11 +28,11 @@ object OpacityCore {
         System.loadLibrary("OpacityCore")
     }
 
-    fun initialize(context: Context, apiKey: String, dryRun: Boolean): Int {
+    fun initialize(context: Context, apiKey: String, dryRun: Boolean, environment: Environment): Int {
         appContext = context
         sRuntime = GeckoRuntime.create(context.applicationContext)
         cryptoManager = CryptoManager(appContext.applicationContext)
-        return init(apiKey, dryRun)
+        return init(apiKey, dryRun, environment.ordinal)
     }
 
     fun getRuntime(): GeckoRuntime {
@@ -145,7 +152,7 @@ object OpacityCore {
         }
     }
 
-    private external fun init(apiKey: String, dryRun: Boolean): Int
+    private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
     private external fun getUberFareEstimate(
