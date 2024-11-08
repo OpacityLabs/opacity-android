@@ -28,11 +28,14 @@ object OpacityCore {
         System.loadLibrary("OpacityCore")
     }
 
-    fun initialize(context: Context, apiKey: String, dryRun: Boolean, environment: Environment): Int {
-        appContext = context
-        sRuntime = GeckoRuntime.create(context.applicationContext)
-        cryptoManager = CryptoManager(appContext.applicationContext)
+    fun initialize(apiKey: String, dryRun: Boolean, environment: Environment): Int {
         return init(apiKey, dryRun, environment.ordinal)
+    }
+
+    fun setContext(context: Context) {
+        appContext = context
+        sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        cryptoManager = CryptoManager(appContext.applicationContext)
     }
 
     fun getRuntime(): GeckoRuntime {

@@ -55,7 +55,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val result = OpacityCore.initialize(this, "[YOUR OPACITY API KEY]", false, OpacityCore.Environment.PRODUCTION)
+        val result = OpacityCore.initialize("[YOUR OPACITY API KEY]", false, OpacityCore.Environment.PRODUCTION)
+        OpacityCore.setContext(this) // You need to pass an instance of an activity so the in-app browser can be launched
         println("Core init status: " + result)
     }
 }
