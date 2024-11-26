@@ -377,3 +377,12 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getCartaCorporationSecuritiesNative
       account_id_str, corporation_id_str, &json, &proof, &err);
   return createOpacityResponse(env, status, json, proof, err);
 }
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getGithubProfileNative(
+    JNIEnv *env, jobject thiz)
+{
+  char *json, *proof, *err;
+  int status = opacity_core::get_github_profile(&json, &proof, &err);
+  return createOpacityResponse(env, status, json, proof, err);
+}

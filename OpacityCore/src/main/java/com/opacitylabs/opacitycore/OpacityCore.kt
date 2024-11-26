@@ -155,6 +155,10 @@ object OpacityCore {
         }
     }
 
+    suspend fun getGithubProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getGithubProfileNative() }
+    }
+
     private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
@@ -197,4 +201,7 @@ object OpacityCore {
         accountId: String,
         corporationId: String
     ): OpacityResponse
+
+    // github
+    private external fun getGithubProfileNative(): OpacityResponse
 }
