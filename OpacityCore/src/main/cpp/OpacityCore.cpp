@@ -168,7 +168,7 @@ Java_com_opacitylabs_opacitycore_OpacityCore_init(JNIEnv *env, jobject thiz,
                                                   jboolean dry_run) {
     java_object = env->NewGlobalRef(thiz);
     const char *api_key_str = env->GetStringUTFChars(api_key, nullptr);
-    int result = opacity_core::init(api_key_str, dry_run);
+    int result = opacity_core::init(api_key_str, dry_run, opacity_core::OPACITY_ENVIRONMENT_LOCAL);
     return result;
 }
 
@@ -230,8 +230,18 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderTripHistoryNative(
     char *json, *proof, *err;
     int limit_int = static_cast<int>(limit);
     int offset_int = static_cast<int>(offset);
-    int status = opacity_core::get_uber_rider_trip_history(limit_int, offset_int, &json, &proof,
+    int status = opacity_core::get_uber_rider_trip_history(nullptr, &json, &proof,
                                                            &err);
+
+    return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getGustoPayrollAdminIdNative(
+        JNIEnv *env, jobject thiz) {
+    char *json, *proof, *err;
+    int status = opacity_core::get_gusto_payroll_admin_id(&json, &proof,
+                                                          &err);
 
     return createOpacityResponse(env, status, json, proof, err);
 }

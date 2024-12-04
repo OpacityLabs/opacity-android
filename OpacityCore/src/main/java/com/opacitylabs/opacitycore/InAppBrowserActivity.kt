@@ -12,6 +12,11 @@ import android.widget.Button
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
@@ -32,6 +37,13 @@ class InAppBrowserActivity : AppCompatActivity() {
     private lateinit var geckoSession: GeckoSession
     private lateinit var geckoView: GeckoView
     private var browserCookies: JSONObject = JSONObject()
+    private var htmlBody: String = ""
+    private var currentUrl: String = ""
+
+    private val job = Job() // To handle waiting for htmlBody
+    private val scope =
+        CoroutineScope(Dispatchers.Main + job) // Coroutine scope for async operations
+
 
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,8 +89,27 @@ class InAppBrowserActivity : AppCompatActivity() {
                             sender: WebExtension.MessageSender
                         ): GeckoResult<Any>? {
                             val jsonMessage = message as JSONObject
-                            val cookies = jsonMessage.getJSONObject("cookies")
-                            browserCookies = JsonUtils.mergeJsonObjects(browserCookies, cookies)
+
+                            when (jsonMessage.getString("event")) {
+                                "html_body" -> {
+                                    Log.d("html body", "Got html body successfully!")
+                                    htmlBody = jsonMessage.getString("html")
+
+                                    handleNavigation(currentUrl, htmlBody)
+                                }
+
+                                "cookies" -> {
+                                    Log.d("cookies", "Got cookies!")
+                                    val cookies = jsonMessage.getJSONObject("cookies")
+
+                                    browserCookies =
+                                        JsonUtils.mergeJsonObjects(browserCookies, cookies)
+                                }
+                                else -> {
+                                    Log.d("Background Script Event", "${jsonMessage.getString("event")}")
+                                }
+                            }
+
                             return super.onMessage(nativeApp, message, sender)
                         }
 
@@ -99,8 +130,9 @@ class InAppBrowserActivity : AppCompatActivity() {
                         session: GeckoSession,
                         request: GeckoSession.NavigationDelegate.LoadRequest
                     ): GeckoResult<AllowOrDeny>? {
+                        Log.d("onLoadRequest", "onLoadRequest executed")
                         val url = request.uri
-                        handleNavigation(url)
+                        handleNavigation(url, htmlBody)
                         return super.onLoadRequest(session, request)
                     }
 
@@ -110,8 +142,11 @@ class InAppBrowserActivity : AppCompatActivity() {
                         perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
                         hasUserGesture: Boolean
                     ) {
+                        Log.d("onLocationChange", "onLocationChange executed")
                         if (url != null) {
-                            handleNavigation(url)
+                            Log.d("onLocationChange", "onLocationChange: handleNavigation")
+                            currentUrl = url
+                            handleNavigation(currentUrl, htmlBody)
                         }
                     }
                 }
@@ -127,14 +162,27 @@ class InAppBrowserActivity : AppCompatActivity() {
             }
     }
 
-    private fun handleNavigation(url: String) {
+    private fun handleNavigation(url: String, htmlBody: String) {
+        // Here, you can add any checks or wait logic if needed (for example, wait for htmlBody)
+        scope.launch {
+            while (htmlBody.isEmpty()) {
+                delay(100) // Delay to avoid tight loop, waits for htmlBody to be set
+            }
 
-        val json =
-            "{\"event\": \"navigation\"," +
-                    "\"url\": \"$url\", \"cookies\": ${browserCookies}, \"id\": \"${
-                        System.currentTimeMillis().toString()
-                    }\"}"
-        OpacityCore.emitWebviewEvent(json)
+            val event: Map<String, Any> = mapOf(
+                "event" to "navigation",
+                "url" to url,
+                "html_body" to htmlBody,
+                "cookies" to browserCookies,
+                "id" to System.currentTimeMillis().toString()
+            )
+            val stringifiedObj = JSONObject(event).toString()
+
+            Log.d("stringified json object", stringifiedObj)
+            OpacityCore.emitWebviewEvent(stringifiedObj)
+
+        }
+
     }
 
     override fun onDestroy() {
