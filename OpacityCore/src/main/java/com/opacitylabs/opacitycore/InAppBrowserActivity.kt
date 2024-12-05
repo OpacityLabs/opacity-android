@@ -32,6 +32,9 @@ class InAppBrowserActivity : AppCompatActivity() {
     private lateinit var geckoSession: GeckoSession
     private lateinit var geckoView: GeckoView
     private var browserCookies: JSONObject = JSONObject()
+    private var htmlBody: String = ""
+    private var currentUrl: String = ""
+
 
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,8 +80,23 @@ class InAppBrowserActivity : AppCompatActivity() {
                             sender: WebExtension.MessageSender
                         ): GeckoResult<Any>? {
                             val jsonMessage = message as JSONObject
-                            val cookies = jsonMessage.getJSONObject("cookies")
-                            browserCookies = JsonUtils.mergeJsonObjects(browserCookies, cookies)
+
+                            when (jsonMessage.getString("event")) {
+                                "html_body" -> {
+                                    htmlBody = jsonMessage.getString("html")
+                                    handleNavigation()
+                                }
+
+                                "cookies" -> {
+                                    val cookies = jsonMessage.getJSONObject("cookies")
+                                    browserCookies =
+                                        JsonUtils.mergeJsonObjects(browserCookies, cookies)
+                                }
+                                else -> {
+                                    Log.d("Background Script Event", "${jsonMessage.getString("event")}")
+                                }
+                            }
+
                             return super.onMessage(nativeApp, message, sender)
                         }
 
@@ -99,8 +117,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                         session: GeckoSession,
                         request: GeckoSession.NavigationDelegate.LoadRequest
                     ): GeckoResult<AllowOrDeny>? {
-                        val url = request.uri
-                        handleNavigation(url)
+                        currentUrl = request.uri
                         return super.onLoadRequest(session, request)
                     }
 
@@ -111,7 +128,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                         hasUserGesture: Boolean
                     ) {
                         if (url != null) {
-                            handleNavigation(url)
+                            currentUrl = url
                         }
                     }
                 }
@@ -127,14 +144,16 @@ class InAppBrowserActivity : AppCompatActivity() {
             }
     }
 
-    private fun handleNavigation(url: String) {
-
-        val json =
-            "{\"event\": \"navigation\"," +
-                    "\"url\": \"$url\", \"cookies\": ${browserCookies}, \"id\": \"${
-                        System.currentTimeMillis().toString()
-                    }\"}"
-        OpacityCore.emitWebviewEvent(json)
+    private fun handleNavigation() {
+            val event: Map<String, Any> = mapOf(
+                "event" to "navigation",
+                "url" to currentUrl,
+                "html_body" to htmlBody,
+                "cookies" to browserCookies,
+                "id" to System.currentTimeMillis().toString()
+            )
+            val stringifiedObj = JSONObject(event).toString()
+            OpacityCore.emitWebviewEvent(stringifiedObj)
     }
 
     override fun onDestroy() {

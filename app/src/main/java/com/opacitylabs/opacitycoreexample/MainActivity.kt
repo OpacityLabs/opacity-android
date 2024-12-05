@@ -55,6 +55,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get uber driver profile") }
+                        Button (
+                            onClick = {
+                                lifecycleScope.launch {
+                                    val res: OpacityResponse = OpacityCore.getGustoPayrollAdminId();
+                                    Log.d("MainActivity", res.proof ?: "No proof")
+                                    Log.d("MainActivity", res.err ?: "No err")
+                                }
+                            },
+                        ) { Text(text = "Get Gusto Payroll Admin Id") }
                     }
                 }
             }

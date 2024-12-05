@@ -127,6 +127,11 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getZabkaPointsNative() }
     }
 
+    suspend fun getGustoPayrollAdminId(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getGustoPayrollAdminIdNative() }
+    }
+
+    private external fun init(apiKey: String, dryRun: Boolean): Int
     suspend fun getCartaProfile(): OpacityResponse {
         return withContext(Dispatchers.IO) { getCartaProfileNative() }
     }
@@ -187,6 +192,7 @@ object OpacityCore {
     // Zabka
     private external fun getZabkaAccountNative(): OpacityResponse
     private external fun getZabkaPointsNative(): OpacityResponse
+    private external fun getGustoPayrollAdminIdNative(): OpacityResponse
 
     // carta
     private external fun getCartaProfileNative(): OpacityResponse

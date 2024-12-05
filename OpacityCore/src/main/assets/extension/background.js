@@ -35,3 +35,31 @@ browser.webRequest.onHeadersReceived.addListener(
   { urls: ["<all_urls>"] }, // Intercept all URLs
   ["responseHeaders"]
 );
+
+browser.webNavigation.onDOMContentLoaded.addListener(function (details) {
+  if (details.frameId === 0) { // Ensure it's the top-level frame
+    // Inject a script to fetch the outerHTML of the current document
+    browser.tabs.executeScript(details.tabId, {
+      code: "document.documentElement.outerHTML"
+    }).then(result => {
+      if (result && result.length > 0) {
+        const htmlBody = result[0]; // The outerHTML of the page
+
+        // Send the HTML content and cookies to the native app
+        browser.runtime.sendNativeMessage("gecko", {
+          event: "html_body",
+          html: htmlBody
+        });
+
+      } else {
+        browser.runtime.sendNativeMessage("gecko", {
+          event: "No results when getting outerHTML",
+        });
+      }
+    }).catch(err => {
+      browser.runtime.sendNativeMessage("gecko", {
+        event: "Execute script error: " + err.toString(),
+      });
+    })
+  }
+});

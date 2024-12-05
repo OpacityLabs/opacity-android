@@ -10,9 +10,22 @@
     }
   },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
-  "permissions": ["webRequest", "activeTab", "webRequestBlocking", "cookies", "*://*/*",  "<all_urls>", "nativeMessaging",
+  "permissions": [
+    "webRequest",
+    "activeTab",
+    "tabs",
+    "webRequestBlocking",
+    "cookies",
+    "*://*/*",
+    "<all_urls>",
+    "nativeMessaging",
     "nativeMessagingFromContent",
-    "geckoViewAddons"]
+    "geckoViewAddons",
+    "webNavigation",
+    "scripting"
+  ]
 }
