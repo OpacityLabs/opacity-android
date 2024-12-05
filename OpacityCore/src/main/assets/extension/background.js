@@ -36,28 +36,30 @@ browser.webRequest.onHeadersReceived.addListener(
   ["responseHeaders"]
 );
 
-browser.webNavigation.onDOMContentLoaded.addListener(function(details) {
-    if (details.frameId === 0) { // Ensure it's the top-level frame
-        // Inject a script to fetch the outerHTML of the current document
-        browser.tabs.executeScript(details.tabId, {
-        code: "document.documentElement.outerHTML"
-        }).then(result => {
-        if (result && result.length > 0) {
-            const htmlBody = result[0]; // The outerHTML of the page
-            console.log("HTML body fetched successfully", htmlBody);
+browser.webNavigation.onDOMContentLoaded.addListener(function (details) {
+  if (details.frameId === 0) { // Ensure it's the top-level frame
+    // Inject a script to fetch the outerHTML of the current document
+    browser.tabs.executeScript(details.tabId, {
+      code: "document.documentElement.outerHTML"
+    }).then(result => {
+      if (result && result.length > 0) {
+        const htmlBody = result[0]; // The outerHTML of the page
 
-            // Send the HTML content and cookies to the backend (native app)
-            browser.runtime.sendNativeMessage("gecko", {
-            event: "html_body",
-            html: htmlBody
-            });
-
-            console.log("HTML body sent to the backend");
-        } else {
-            console.error("Failed to fetch outerHTML");
-        }
-        }).catch(err => {
-        console.error("Error executing script:", err);
+        // Send the HTML content and cookies to the native app
+        browser.runtime.sendNativeMessage("gecko", {
+          event: "html_body",
+          html: htmlBody
         });
-    }
-})
+
+      } else {
+        browser.runtime.sendNativeMessage("gecko", {
+          event: "No results when getting outerHTML",
+        });
+      }
+    }).catch(err => {
+      browser.runtime.sendNativeMessage("gecko", {
+        event: "Execute script error: " + err.toString(),
+      });
+    })
+  }
+});
