@@ -11,10 +11,20 @@ maven { url "https://maven.mozilla.org/maven2/" }
 maven { url 'https://jitpack.io' }
 ```
 
-Then the implementation
+Then add the dependency on the main core package:
 
 ```
-implementation 'com.github.OpacityLabs:opacity-android:3.5.5'
+implementation 'com.github.OpacityLabs:opacity-android:[GET THE LATEST RELEASE VERSION]'
+```
+
+## Add an activity
+
+You need to add an activity to the "AndroidManifest.xml". It's used to launch the in-app web browser:
+
+```xml
+        <activity
+            android:name="com.opacitylabs.opacitycore.InAppBrowserActivity"
+            android:theme="@style/Theme.AppCompat.DayNight" />
 ```
 
 Then you can import the classes and call the SDK functions
@@ -45,9 +55,18 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val result = OpacityCore.initialize(this, "[YOUR OPACITY API KEY]", false)
+        val result = OpacityCore.initialize("[YOUR OPACITY API KEY]", false, OpacityCore.Environment.PRODUCTION)
+        OpacityCore.setContext(this) // You need to pass an instance of an activity so the in-app browser can be launched
         println("Core init status: " + result)
     }
 }
 
+```
+
+## Running the sample app
+
+You need to create an `env` (no leading dot) file inside `app/src/main/assets` (create the folders if necessary). Inside you need the OPACITY_API_KEY variable you will get from the backend:
+
+```
+OPACITY_API_KEY=[Your backend key]
 ```

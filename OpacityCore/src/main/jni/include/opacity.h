@@ -24,7 +24,15 @@ extern const int32_t OPACITY_GENERIC_ERROR;
 
 extern const int32_t OPACITY_NOT_SUPPORTED;
 
-int32_t init(const char *api_key_str, bool dry_run);
+extern const int32_t OPACITY_ENVIRONMENT_TEST;
+
+extern const int32_t OPACITY_ENVIRONMENT_LOCAL;
+
+extern const int32_t OPACITY_ENVIRONMENT_STAGING;
+
+extern const int32_t OPACITY_ENVIRONMENT_PRODUCTION;
+
+int32_t init(const char *api_key_str, bool dry_run, int32_t backend_environment);
 
 void execute_workflow(const char *flow);
 
@@ -36,8 +44,7 @@ const char *start(const char *request);
 
 int32_t get_uber_rider_profile(char **json_ptr, char **proof_ptr, char **err_ptr);
 
-int32_t get_uber_rider_trip_history(int32_t limit,
-                                    int32_t offset,
+int32_t get_uber_rider_trip_history(const char *cursor,
                                     char **json_ptr,
                                     char **proof_ptr,
                                     char **err_ptr);
@@ -56,6 +63,14 @@ int32_t get_uber_driver_trips(const char *start_date,
                               char **proof_ptr,
                               char **err_ptr);
 
+int32_t get_uber_fare_estimate(double pickup_latitude,
+                               double pickup_longitude,
+                               double destination_latitude,
+                               double destination_longitude,
+                               char **json_ptr,
+                               char **proof_ptr,
+                               char **err_ptr);
+
 int32_t get_reddit_account(char **json_ptr, char **proof_ptr, char **err_ptr);
 
 int32_t get_reddit_followed_subreddits(char **json_ptr, char **proof_ptr, char **err_ptr);
@@ -67,6 +82,41 @@ int32_t get_reddit_posts(char **json_ptr, char **proof_ptr, char **err_ptr);
 int32_t get_zabka_account(char **json_ptr, char **proof_ptr, char **err_ptr);
 
 int32_t get_zabka_points(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_carta_profile(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_carta_organizations(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_carta_portfolio_investments(const char *firm_id,
+                                        const char *account_id,
+                                        char **json_ptr,
+                                        char **proof_ptr,
+                                        char **err_ptr);
+
+int32_t get_carta_holdings_companies(const char *account_id,
+                                     char **json_ptr,
+                                     char **proof_ptr,
+                                     char **err_ptr);
+
+int32_t get_carta_corporation_securities(const char *account_id,
+                                         const char *corporation_id,
+                                         char **json_ptr,
+                                         char **proof_ptr,
+                                         char **err_ptr);
+
+int32_t get_github_profile(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_instagram_profile(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_instagram_likes(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_instagram_comments(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_instagram_saved_posts(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_23andme_profile(char **json_ptr, char **proof_ptr, char **err_ptr);
+
+int32_t get_23andme_computed_result(char **json_ptr, char **proof_ptr, char **err_ptr);
 
 extern double get_battery_level(void);
 

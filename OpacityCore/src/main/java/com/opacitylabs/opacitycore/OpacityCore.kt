@@ -9,7 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mozilla.geckoview.GeckoRuntime
 
+
 object OpacityCore {
+    enum class Environment {
+        TEST,
+        LOCAL,
+        STAGING,
+        PRODUCTION,
+    }
 
     private lateinit var appContext: Context
     private lateinit var cryptoManager: CryptoManager
@@ -21,11 +28,14 @@ object OpacityCore {
         System.loadLibrary("OpacityCore")
     }
 
-    fun initialize(context: Context, apiKey: String, dryRun: Boolean): Int {
+    fun initialize(apiKey: String, dryRun: Boolean, environment: Environment): Int {
+        return init(apiKey, dryRun, environment.ordinal)
+    }
+
+    fun setContext(context: Context) {
         appContext = context
-        sRuntime = GeckoRuntime.create(context.applicationContext)
+        sRuntime = GeckoRuntime.create(appContext.applicationContext)
         cryptoManager = CryptoManager(appContext.applicationContext)
-        return init(apiKey, dryRun)
     }
 
     fun getRuntime(): GeckoRuntime {
@@ -55,8 +65,8 @@ object OpacityCore {
     fun presentBrowser() {
         val intent = Intent()
         intent.setClassName(
-                appContext.packageName,
-                "com.opacitylabs.opacitycore.InAppBrowserActivity"
+            appContext.packageName,
+            "com.opacitylabs.opacitycore.InAppBrowserActivity"
         )
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
@@ -73,8 +83,8 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getUberRiderProfileNative() }
     }
 
-    suspend fun getUberRiderTripHistory(limit: Int, offset: Int): OpacityResponse {
-        return withContext(Dispatchers.IO) { getUberRiderTripHistoryNative(limit, offset) }
+    suspend fun getUberRiderTripHistory(cursor: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getUberRiderTripHistoryNative(cursor) }
     }
 
     suspend fun getUberRiderTrip(id: String): OpacityResponse {
@@ -86,9 +96,9 @@ object OpacityCore {
     }
 
     suspend fun getUberDriverTrips(
-            startDate: String,
-            endDate: String,
-            cursor: String
+        startDate: String,
+        endDate: String,
+        cursor: String
     ): OpacityResponse {
         return withContext(Dispatchers.IO) { getUberDriverTripsNative(startDate, endDate, cursor) }
     }
@@ -122,23 +132,82 @@ object OpacityCore {
     }
 
     private external fun init(apiKey: String, dryRun: Boolean): Int
+    suspend fun getCartaProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaProfileNative() }
+    }
+
+    suspend fun getCartaOrganizations(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaOrganizationsNative() }
+    }
+
+    suspend fun getCartaPortfolioInvestments(firmId: String, accountId: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaPortfolioInvestmentsNative(firmId, accountId) }
+    }
+
+    suspend fun getCartaHoldingsCompanies(accountId: String): OpacityResponse {
+        return withContext(Dispatchers.IO) { getCartaHoldingsCompaniesNative(accountId) }
+    }
+
+    suspend fun getCartaCorporationSecurities(
+        accountId: String,
+        corporationId: String
+    ): OpacityResponse {
+        return withContext(Dispatchers.IO) {
+            getCartaCorporationSecuritiesNative(
+                accountId,
+                corporationId
+            )
+        }
+    }
+
+    suspend fun getGithubProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getGithubProfileNative() }
+    }
+
+    private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
+    private external fun getUberFareEstimate(
+        pickupLatitude: Double,
+        pickupLongitude: Double,
+        destinationLatitude: Double,
+        destinationLongitude: Double
+    ): OpacityResponse
+
     private external fun getUberRiderProfileNative(): OpacityResponse
-    private external fun getUberRiderTripHistoryNative(limit: Int, offset: Int): OpacityResponse
+    private external fun getUberRiderTripHistoryNative(cursor: String): OpacityResponse
     private external fun getUberRiderTripNative(id: String): OpacityResponse
     private external fun getUberDriverProfileNative(): OpacityResponse
     private external fun getUberDriverTripsNative(
-            startDate: String,
-            endDate: String,
-            cursor: String
+        startDate: String,
+        endDate: String,
+        cursor: String
     ): OpacityResponse
 
     private external fun getRedditAccountNative(): OpacityResponse
     private external fun getRedditFollowedSubredditsNative(): OpacityResponse
     private external fun getRedditCommentsNative(): OpacityResponse
     private external fun getRedditPostsNative(): OpacityResponse
+
+    // Zabka
     private external fun getZabkaAccountNative(): OpacityResponse
     private external fun getZabkaPointsNative(): OpacityResponse
     private external fun getGustoPayrollAdminIdNative(): OpacityResponse
+
+    // carta
+    private external fun getCartaProfileNative(): OpacityResponse
+    private external fun getCartaOrganizationsNative(): OpacityResponse
+    private external fun getCartaPortfolioInvestmentsNative(
+        firmId: String,
+        accountId: String
+    ): OpacityResponse
+
+    private external fun getCartaHoldingsCompaniesNative(accountId: String): OpacityResponse
+    private external fun getCartaCorporationSecuritiesNative(
+        accountId: String,
+        corporationId: String
+    ): OpacityResponse
+
+    // github
+    private external fun getGithubProfileNative(): OpacityResponse
 }
