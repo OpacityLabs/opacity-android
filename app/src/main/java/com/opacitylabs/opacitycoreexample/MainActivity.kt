@@ -64,10 +64,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get Gusto Payroll Admin Id") }
-                        //                        Button(
-                        //                                onClick = {
-                        // OpacityCore.sampleRedirection() },
-                        //                        ) { Text(text = "Sample redirection") }
                     }
                 }
             }

@@ -83,20 +83,12 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                             when (jsonMessage.getString("event")) {
                                 "html_body" -> {
-                                    // we assume the currentUrl is getting set before we are receiving the html body
-                                    // that is because the html body gets submitted onDOMContentLoaded, before navigation events
-                                    Log.d("html body", "Got html body successfully for url: '${currentUrl}' !")
                                     htmlBody = jsonMessage.getString("html")
-
                                     handleNavigation()
                                 }
 
                                 "cookies" -> {
-                                    val cookiesJsonObj = jsonMessage.getJSONObject("cookies")
-
-                                    Log.d("cookies", "Got cookies!: " + cookiesJsonObj.keys().iterator().asSequence().toList())
                                     val cookies = jsonMessage.getJSONObject("cookies")
-
                                     browserCookies =
                                         JsonUtils.mergeJsonObjects(browserCookies, cookies)
                                 }
