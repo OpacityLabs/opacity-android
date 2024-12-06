@@ -164,6 +164,22 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getGithubProfileNative() }
     }
 
+    suspend fun getInstagramProfile(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getInstagramProfileNative() }
+    }
+
+    suspend fun getInstagramLikes(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getInstagramLikesNative() }
+    }
+
+    suspend fun getInstagramComments(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getInstagramCommentsNative() }
+    }
+
+    suspend fun getInstagramSavedPosts(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getInstagramSavedPostsNative() }
+    }
+
     private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
@@ -210,4 +226,10 @@ object OpacityCore {
 
     // github
     private external fun getGithubProfileNative(): OpacityResponse
+
+    // instagram
+    private external fun getInstagramProfileNative(): OpacityResponse
+    private external fun getInstagramLikesNative(): OpacityResponse
+    private external fun getInstagramCommentsNative(): OpacityResponse
+    private external fun getInstagramSavedPostsNative(): OpacityResponse
 }

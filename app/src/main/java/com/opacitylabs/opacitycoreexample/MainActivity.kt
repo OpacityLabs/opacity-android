@@ -64,6 +64,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get Gusto Payroll Admin Id") }
+                        Button (
+                            onClick = {
+                                lifecycleScope.launch {
+                                    val res: OpacityResponse = OpacityCore.getInstagramProfile();
+                                    Log.d("MainActivity", res.proof ?: "No proof")
+                                    Log.d("MainActivity", res.err ?: "No err")
+                                }
+                            },
+                        ) { Text(text = "Get Instagram profile") }
                     }
                 }
             }
