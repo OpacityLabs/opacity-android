@@ -386,6 +386,42 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getGithubProfileNative(
   int status = opacity_core::get_github_profile(&json, &proof, &err);
   return createOpacityResponse(env, status, json, proof, err);
 }
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramProfileNative(
+    JNIEnv *env, jobject thiz)
+{
+  char *json, *proof, *err;
+  int status = opacity_core::get_instagram_profile(&json, &proof, &err);
+  return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramLikesNative(
+    JNIEnv *env, jobject thiz)
+{
+  char *json, *proof, *err;
+  int status = opacity_core::get_instagram_likes(&json, &proof, &err);
+  return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramCommentsNative(
+    JNIEnv *env, jobject thiz)
+{
+  char *json, *proof, *err;
+  int status = opacity_core::get_instagram_comments(&json, &proof, &err);
+  return createOpacityResponse(env, status, json, proof, err);
+}
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramSavedPostsNative(
+    JNIEnv *env, jobject thiz)
+{
+  char *json, *proof, *err;
+  int status = opacity_core::get_instagram_saved_posts(&json, &proof, &err);
+  return createOpacityResponse(env, status, json, proof, err);
+}
   
 extern "C" JNIEXPORT jobject JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getGustoPayrollAdminIdNative(
