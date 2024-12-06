@@ -66,7 +66,7 @@ publishing {
         release(MavenPublication) {
             groupId = 'com.opacitylabs'
             artifactId = 'opacitycore'
-            version = '3.20.6'
+            version = '3.20.7'
 
             afterEvaluate {
                 from components.release
