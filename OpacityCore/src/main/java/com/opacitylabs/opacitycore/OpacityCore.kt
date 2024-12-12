@@ -127,10 +127,6 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getZabkaPointsNative() }
     }
 
-    suspend fun getGustoPayrollAdminId(): OpacityResponse {
-        return withContext(Dispatchers.IO) { getGustoPayrollAdminIdNative() }
-    }
-
     private external fun init(apiKey: String, dryRun: Boolean): Int
     suspend fun getCartaProfile(): OpacityResponse {
         return withContext(Dispatchers.IO) { getCartaProfileNative() }
@@ -180,6 +176,14 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getInstagramSavedPostsNative() }
     }
 
+    suspend fun getGustoMembersTable(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getGustoMembersTableNative() }
+    }
+
+    suspend fun getGustoPayrollAdminId(): OpacityResponse {
+        return withContext(Dispatchers.IO) { getGustoPayrollAdminIdNative() }
+    }
+
     private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
     private external fun executeFlow(flow: String)
     external fun emitWebviewEvent(eventJson: String)
@@ -208,7 +212,6 @@ object OpacityCore {
     // Zabka
     private external fun getZabkaAccountNative(): OpacityResponse
     private external fun getZabkaPointsNative(): OpacityResponse
-    private external fun getGustoPayrollAdminIdNative(): OpacityResponse
 
     // carta
     private external fun getCartaProfileNative(): OpacityResponse
@@ -217,7 +220,6 @@ object OpacityCore {
         firmId: String,
         accountId: String
     ): OpacityResponse
-
     private external fun getCartaHoldingsCompaniesNative(accountId: String): OpacityResponse
     private external fun getCartaCorporationSecuritiesNative(
         accountId: String,
@@ -232,4 +234,8 @@ object OpacityCore {
     private external fun getInstagramLikesNative(): OpacityResponse
     private external fun getInstagramCommentsNative(): OpacityResponse
     private external fun getInstagramSavedPostsNative(): OpacityResponse
+
+    // Gusto
+    private external fun getGustoMembersTableNative(): OpacityResponse
+    private external fun getGustoPayrollAdminIdNative(): OpacityResponse
 }
