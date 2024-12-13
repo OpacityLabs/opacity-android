@@ -184,8 +184,15 @@ object OpacityCore {
         return withContext(Dispatchers.IO) { getGustoPayrollAdminIdNative() }
     }
 
+    suspend fun get(name: String, params: String?): OpacityResponse {
+        return withContext(Dispatchers.IO) { getNative(name, params) }
+    }
+
     private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
     private external fun executeFlow(flow: String)
+
+    private external fun getNative(name: String, params: String?): OpacityResponse
+
     external fun emitWebviewEvent(eventJson: String)
     private external fun getUberFareEstimate(
         pickupLatitude: Double,

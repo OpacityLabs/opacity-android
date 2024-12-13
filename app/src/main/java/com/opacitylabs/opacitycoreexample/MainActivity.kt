@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
                         Button (
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse = OpacityCore.getGustoPayrollAdminId();
+                                    val res: OpacityResponse = OpacityCore.get("flow:gusto:my_pay", null);
                                     Log.d("MainActivity", res.proof ?: "No proof")
                                     Log.d("MainActivity", res.err ?: "No err")
                                 }
@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
         val opacityApiKey = dotenv["OPACITY_API_KEY"]
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.STAGING)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION)
         OpacityCore.setContext(this)
     }
 }

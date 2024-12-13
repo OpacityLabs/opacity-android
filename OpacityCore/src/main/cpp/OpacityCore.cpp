@@ -435,3 +435,15 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getGustoPayrollAdminIdNative(
 
   return createOpacityResponse(env, status, json, proof, err);
 }
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env, jobject thiz, jstring name,
+                                                       jstring params) {
+    char *json, *proof, *err;
+    const char *name_str =
+            env->GetStringUTFChars(name, nullptr);
+    const char *params_str = params != nullptr ?
+            env->GetStringUTFChars(params, nullptr) : nullptr;
+    int status = opacity_core::get(name_str, params_str, &json, &proof, &err);
+    return createOpacityResponse(env, status, json, proof, err);
+}
