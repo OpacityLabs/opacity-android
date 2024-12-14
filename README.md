@@ -4,6 +4,12 @@ Core library of Opacity for Android
 
 # Install
 
+Go to JitPack and take a look at the available versions:
+
+https://jitpack.io/#OpacityLabs/opacity-android
+
+If the latest version has not been built you can click on the `Get it!` button to trigger a build of that release. You can then modify your build.gradle to fetch that version.
+
 Add the following repos to your settings (root `build.gradle`)
 
 ```
