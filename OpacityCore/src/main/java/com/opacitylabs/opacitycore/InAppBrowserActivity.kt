@@ -67,12 +67,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         OpacityCore.getRuntime().webExtensionController.installBuiltIn("resource://android/assets/extension/")
             .accept { ext ->
-                if (ext != null) {
-                    Log.d("InAppBrowserActivity", "WebExtension successfully installed")
-                    // Set the MessageDelegate or do further initialization here
-                } else {
-                    Log.e("InAppBrowserActivity", "Failed to install WebExtension")
-                }
+
                 ext?.setMessageDelegate(
                     object : WebExtension.MessageDelegate {
                         override fun onMessage(
@@ -94,7 +89,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                                         JsonUtils.mergeJsonObjects(browserCookies, cookies)
                                 }
                                 else -> {
-                                    Log.d("Background Script Event", "${jsonMessage.getString("event")}")
+                                    // Intentionally left blank
+                                    // Log.d("Background Script Event", "${jsonMessage.getString("event")}")
                                 }
                             }
 
