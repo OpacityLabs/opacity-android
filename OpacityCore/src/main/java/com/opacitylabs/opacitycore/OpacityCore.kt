@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.mozilla.geckoview.GeckoRuntime
 
-
 object OpacityCore {
     enum class Environment {
         TEST,
@@ -76,7 +75,6 @@ object OpacityCore {
     fun closeBrowser() {
         val closeIntent = Intent("com.opacitylabs.opacitycore.CLOSE_BROWSER")
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
-        Log.d("OpacityCore", "Intent dispatched")
     }
 
     suspend fun getUberRiderProfile(): OpacityResponse {

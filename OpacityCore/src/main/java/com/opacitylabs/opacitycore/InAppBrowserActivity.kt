@@ -53,6 +53,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             val json =
                 "{\"event\": \"close\", \"id\": \"${System.currentTimeMillis().toString()}\"}"
             OpacityCore.emitWebviewEvent(json)
+            finish()
         }
 
         val layoutParams =

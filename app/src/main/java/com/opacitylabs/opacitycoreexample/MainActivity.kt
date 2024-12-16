@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
                         Button (
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse = OpacityCore.get("flow:gusto:my_pay", null);
+                                    val res: OpacityResponse = OpacityCore.get("flow:gusto:my_pay", null)
                                     Log.d("MainActivity", res.proof ?: "No proof")
                                     Log.d("MainActivity", res.err ?: "No err")
                                 }
@@ -73,6 +73,13 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get Instagram profile") }
+                        Button (
+                            onClick = {
+                                lifecycleScope.launch {
+                                    var res: OpacityResponse = OpacityCore.get("quack", null)
+                                }
+                            }
+                        ) { Text(text = "failing flow") }
                     }
                 }
             }
