@@ -55,16 +55,17 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get uber driver profile") }
-                        Button (
+                        Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse = OpacityCore.get("flow:gusto:my_pay", null)
+                                    val res: OpacityResponse =
+                                        OpacityCore.get("flow:gusto:my_pay", null)
                                     Log.d("MainActivity", res.proof ?: "No proof")
                                     Log.d("MainActivity", res.err ?: "No err")
                                 }
                             },
                         ) { Text(text = "Get Gusto Payroll Admin Id") }
-                        Button (
+                        Button(
                             onClick = {
                                 lifecycleScope.launch {
                                     val res: OpacityResponse = OpacityCore.getInstagramProfile();
@@ -73,13 +74,13 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get Instagram profile") }
-                        Button (
+                        Button(
                             onClick = {
                                 lifecycleScope.launch {
                                     var res: OpacityResponse = OpacityCore.get("quack", null)
                                 }
                             }
-                        ) { Text(text = "failing flow") }
+                        ) { Text(text = "failing lua") }
                     }
                 }
             }

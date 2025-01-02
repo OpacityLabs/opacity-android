@@ -3,7 +3,6 @@ package com.opacitylabs.opacitycore
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -187,7 +186,6 @@ object OpacityCore {
     }
 
     private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
-    private external fun executeFlow(flow: String)
 
     private external fun getNative(name: String, params: String?): OpacityResponse
 
@@ -225,6 +223,7 @@ object OpacityCore {
         firmId: String,
         accountId: String
     ): OpacityResponse
+
     private external fun getCartaHoldingsCompaniesNative(accountId: String): OpacityResponse
     private external fun getCartaCorporationSecuritiesNative(
         accountId: String,
