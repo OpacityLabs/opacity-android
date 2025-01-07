@@ -199,16 +199,13 @@ jobject createOpacityResponse(JNIEnv *env, int status, char *json, char *proof,
     json2 = env->NewStringUTF(json);
     proof2 = env->NewStringUTF(nullptr);
     err2 = env->NewStringUTF(nullptr);
+    opacity_core::free_string(json);
   } else {
     json2 = env->NewStringUTF(nullptr);
     proof2 = env->NewStringUTF(nullptr);
     err2 = env->NewStringUTF(err);
+    opacity_core::free_string(err);
   }
-
-  // clear pointers
-  opacity_core::free_string(json);
-  // opacity_core::free_string(proof);
-  opacity_core::free_string(err);
 
   opacityResponse = env->NewObject(opacityResponseClass, constructor, status,
                                    json2, proof2, err2);

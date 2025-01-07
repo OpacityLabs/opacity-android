@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse = OpacityCore.getUberRiderProfile()
+                                    val res: OpacityResponse = OpacityCore.get("flow:uber_rider:profile", null)
                                     Log.d("MainActivity", res.proof ?: "No proof")
                                     Log.d("MainActivity", res.err ?: "No err")
                                 }

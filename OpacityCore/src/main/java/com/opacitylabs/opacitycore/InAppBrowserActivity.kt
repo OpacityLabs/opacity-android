@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import androidx.appcompat.app.ActionBar
@@ -51,7 +50,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         closeButton.text = "Close"
         closeButton.setOnClickListener {
             val json =
-                "{\"event\": \"close\", \"id\": \"${System.currentTimeMillis().toString()}\"}"
+                "{\"event\": \"close\", \"id\": \"${System.currentTimeMillis()}\"}"
             OpacityCore.emitWebviewEvent(json)
             finish()
         }
