@@ -57,9 +57,9 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         val layoutParams =
             ActionBar.LayoutParams(
-                ActionBar.LayoutParams.WRAP_CONTENT,
-                ActionBar.LayoutParams.WRAP_CONTENT,
-                Gravity.START or Gravity.CENTER_VERTICAL
+            ActionBar.LayoutParams.WRAP_CONTENT,
+            ActionBar.LayoutParams.WRAP_CONTENT,
+            Gravity.END or Gravity.CENTER_VERTICAL
             )
         supportActionBar?.setCustomView(closeButton, layoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
