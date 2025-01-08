@@ -24,6 +24,6 @@ dependencyResolutionManagement {
 }
 
 
-rootProject.name = "OpacityCoreExample"
+rootProject.name = "OpacityAndroid"
 include(":app")
 include(":OpacityCore")

@@ -33,7 +33,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var browserCookies: JSONObject = JSONObject()
     private var htmlBody: String = ""
     private var currentUrl: String = ""
-
+    private val visitedUrls = mutableListOf<String>()
 
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,13 +46,13 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        val closeButton = Button(this)
-        closeButton.text = "Close"
-        closeButton.setOnClickListener {
-            val json =
-                "{\"event\": \"close\", \"id\": \"${System.currentTimeMillis()}\"}"
-            OpacityCore.emitWebviewEvent(json)
-            finish()
+        val closeButton = Button(this, null, android.R.attr.buttonStyleSmall).apply {
+            text = "✕"
+            textSize = 18f
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            setOnClickListener {
+            onClose()
+            }
         }
 
         val layoutParams =
@@ -66,7 +66,6 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         OpacityCore.getRuntime().webExtensionController.installBuiltIn("resource://android/assets/extension/")
             .accept { ext ->
-
                 ext?.setMessageDelegate(
                     object : WebExtension.MessageDelegate {
                         override fun onMessage(
@@ -79,7 +78,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                             when (jsonMessage.getString("event")) {
                                 "html_body" -> {
                                     htmlBody = jsonMessage.getString("html")
-                                    handleNavigation()
+                                    emitNavigationEvent()
                                 }
 
                                 "cookies" -> {
@@ -114,6 +113,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                         request: GeckoSession.NavigationDelegate.LoadRequest
                     ): GeckoResult<AllowOrDeny>? {
                         currentUrl = request.uri
+                        addToVisitedUrls(request.uri)
                         return super.onLoadRequest(session, request)
                     }
 
@@ -125,6 +125,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                     ) {
                         if (url != null) {
                             currentUrl = url
+                            addToVisitedUrls(url)
                         }
                     }
                 }
@@ -140,16 +141,39 @@ class InAppBrowserActivity : AppCompatActivity() {
             }
     }
 
-    private fun handleNavigation() {
+    private fun emitNavigationEvent() {
             val event: Map<String, Any> = mapOf(
                 "event" to "navigation",
                 "url" to currentUrl,
                 "html_body" to htmlBody,
                 "cookies" to browserCookies,
+                "visited_urls" to visitedUrls,
                 "id" to System.currentTimeMillis().toString()
             )
             val stringifiedObj = JSONObject(event).toString()
             OpacityCore.emitWebviewEvent(stringifiedObj)
+            clearVisitedUrls()
+    }
+
+    private fun onClose() {
+        val event: Map<String, Any> = mapOf(
+            "event" to "close",
+            "id" to System.currentTimeMillis().toString()
+        )
+        val stringifiedObj = JSONObject(event).toString()
+        OpacityCore.emitWebviewEvent(stringifiedObj)
+        finish()
+    }
+
+    private fun addToVisitedUrls(url: String) {
+        if (visitedUrls.isNotEmpty() && visitedUrls.last() == url) {
+            return
+        }
+        visitedUrls.add(url)
+    }
+
+    private fun clearVisitedUrls() {
+        visitedUrls.clear()
     }
 
     override fun onDestroy() {

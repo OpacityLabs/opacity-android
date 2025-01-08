@@ -44,7 +44,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OpacityCoreExampleTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = androidx.compose.ui.graphics.Color.Black
+                ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
                         Button(
                             onClick = {
