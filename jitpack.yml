@@ -1,0 +1,7 @@
+jdk:
+  - openjdk17
+before_install:
+  - sdk install java 17.0.9-open
+  - sdk use java 17.0.9-open
+  - curl -L -o jniLibs.zip https://github.com/OpacityLabs/opacity-android/releases/download/$JITPACK_TAG/jniLibs.zip
+  - unzip jniLibs.zip -d OpacityCore/src/main/jniLibs
