@@ -5,6 +5,5 @@ before_install:
   - sdk install java 17.0.9-open
   - sdk use java 17.0.9-open
   - export CURRENT_TAG=$(git describe --tags --exact-match 2>/dev/null || echo "no-tag")
-  # - echo "Current Tag: $CURRENT_TAG"
   - curl -L -o jniLibs.zip https://github.com/OpacityLabs/opacity-android/releases/download/$CURRENT_TAG/jniLibs.zip
-  - unzip jniLibs.zip -d OpacityCore/src/main/jniLibs
+  - unzip jniLibs.zip
