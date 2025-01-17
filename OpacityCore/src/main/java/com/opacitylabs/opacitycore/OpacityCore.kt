@@ -159,6 +159,27 @@ object OpacityCore {
 //        return withContext(Dispatchers.IO) { getGustoPayrollAdminIdNative() }
 //    }
 
+    fun parseJsonElementToAny(jsonElement: JsonElement): Any {
+        return when (jsonElement) {
+            is JsonPrimitive -> {
+                when {
+                    jsonElement.isString -> jsonElement.toString()
+                    jsonElement.intOrNull != null -> jsonElement.int
+                    jsonElement.booleanOrNull != null -> jsonElement.boolean
+                    jsonElement.doubleOrNull != null -> jsonElement.double
+                    else -> throw Exception("Could not convert JSON primitive $jsonElement")
+                }
+            }
+            is JsonObject -> {
+                jsonElement.toMap().mapValues { parseJsonElementToAny(it.value) }
+            }
+            is JsonArray -> {
+                jsonElement.map { parseJsonElementToAny(it) }
+            }
+            else -> throw Exception("Could not convert JSON primitive $jsonElement")
+        }
+    }
+
     suspend fun get(name: String, params: Map<String, Any>?): Map<String, Any> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let { Json.encodeToString(it) }
@@ -167,7 +188,8 @@ object OpacityCore {
                 throw Exception(res.err)
             }
 
-            val map: Map<String, JsonElement> = Json.parseToJsonElement(res.data!!).jsonObject.toMap()
+            val map: Map<String, Any> = Json.parseToJsonElement(res.data!!).jsonObject
+                .mapValues { parseJsonElementToAny(it.value) }
             map
         }
     }
