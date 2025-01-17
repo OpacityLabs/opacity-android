@@ -52,36 +52,37 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse = OpacityCore.get("flow:uber_rider:profile", null)
-                                    Log.d("MainActivity", res.proof ?: "No proof")
-                                    Log.d("MainActivity", res.err ?: "No err")
+                                    try {
+                                        val res = OpacityCore.get("flow:uber_rider:profile", null)
+                                        Log.d("MainActivity", res["json"].toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
                                 }
                             },
                         ) { Text(text = "Get uber driver profile") }
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse =
-                                        OpacityCore.get("flow:gusto:my_pay", null)
-                                    Log.d("MainActivity", res.proof ?: "No proof")
-                                    Log.d("MainActivity", res.err ?: "No err")
+                                    try {
+                                        val res = OpacityCore.get("generate_proof", null)
+                                        Log.d("MainActivity", res["json"].toString())
+                                        Log.d("MainActivity", res["signature"].toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
                                 }
                             },
-                        ) { Text(text = "Get Gusto Payroll Admin Id") }
+                        ) { Text(text = "Generate Proof") }
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res: OpacityResponse = OpacityCore.getInstagramProfile();
-                                    Log.d("MainActivity", res.proof ?: "No proof")
-                                    Log.d("MainActivity", res.err ?: "No err")
-                                }
-                            },
-                        ) { Text(text = "Get Instagram profile") }
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    var res: OpacityResponse = OpacityCore.get("quack", null)
-                                    Log.d("MainActivity", res.proof ?: "No proof")
+                                    try {
+                                        val res = OpacityCore.get("quack", null)
+                                        Log.d("MainActivity", res["json"].toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
                                 }
                             }
                         ) { Text(text = "failing lua") }
@@ -94,7 +95,7 @@ class MainActivity : ComponentActivity() {
         val opacityApiKey = dotenv["OPACITY_API_KEY"]
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST)
         OpacityCore.setContext(this)
     }
 }

@@ -184,269 +184,215 @@ Java_com_opacitylabs_opacitycore_OpacityCore_emitWebviewEvent(
   opacity_core::emit_webview_event(json);
 }
 
-jobject createOpacityResponse(JNIEnv *env, int status, char *json, char *proof,
-                              char *err) {
+jobject createOpacityResponse(JNIEnv *env, int status, char *res, char *err) {
   jclass opacityResponseClass =
       env->FindClass("com/opacitylabs/opacitycore/OpacityResponse");
 
   jmethodID constructor = env->GetMethodID(
       opacityResponseClass, "<init>",
-      "(ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+      "(ILjava/lang/String;Ljava/lang/String;)V");
 
   jobject opacityResponse;
-  jstring json2, proof2, err2;
+  jstring jres, jerr;
   if (status == opacity_core::OPACITY_OK) {
-    json2 = env->NewStringUTF(json);
-    proof2 = env->NewStringUTF(nullptr);
-    err2 = env->NewStringUTF(nullptr);
-    opacity_core::free_string(json);
+    jres = env->NewStringUTF(res);
+    jerr = env->NewStringUTF(nullptr);
+    opacity_core::free_string(res);
   } else {
-    json2 = env->NewStringUTF(nullptr);
-    proof2 = env->NewStringUTF(nullptr);
-    err2 = env->NewStringUTF(err);
+    jres = env->NewStringUTF(nullptr);
+    jerr = env->NewStringUTF(err);
     opacity_core::free_string(err);
   }
 
   opacityResponse = env->NewObject(opacityResponseClass, constructor, status,
-                                   json2, proof2, err2);
+                                   jres, jerr);
 
   return opacityResponse;
 }
 
 extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderProfileNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_uber_rider_profile(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderTripHistoryNative(
-    JNIEnv *env, jobject thiz, jstring cursor) {
-  char *json, *proof, *err;
-  const char *cursor_str = env->GetStringUTFChars(cursor, nullptr);
-  int status = opacity_core::get_uber_rider_trip_history(cursor_str, &json,
-                                                         &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberRiderTripNative(
-    JNIEnv *env, jobject thiz, jstring id) {
-  char *json, *proof, *err;
-  const char *id_str = env->GetStringUTFChars(id, nullptr);
-  int status = opacity_core::get_uber_rider_trip(id_str, &json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberDriverProfileNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_uber_driver_profile(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberDriverTripsNative(
-    JNIEnv *env, jobject thiz, jstring start_date, jstring end_date,
-    jstring cursor) {
-  char *json, *proof, *err;
-  const char *start_date_str = env->GetStringUTFChars(start_date, nullptr);
-  const char *end_date_str = env->GetStringUTFChars(end_date, nullptr);
-  const char *cursor_str = env->GetStringUTFChars(cursor, nullptr);
-  int status = opacity_core::get_uber_driver_trips(
-      start_date_str, end_date_str, cursor_str, &json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getRedditAccountNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_reddit_account(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getRedditFollowedSubredditsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status =
-      opacity_core::get_reddit_followed_subreddits(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getRedditCommentsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_reddit_comments(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getRedditPostsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_reddit_posts(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaAccountNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_zabka_account(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaPointsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_zabka_points(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getUberFareEstimate(
-    JNIEnv *env, jobject thiz, jdouble j_pickup_latitude,
-    jdouble j_pickup_longitude, jdouble j_destination_latitude,
-    jdouble j_destination_longitude) {
-  char *json, *proof, *err;
-  auto pickup_latitude = static_cast<double>(j_pickup_latitude);
-  auto pickup_longitude = static_cast<double>(j_pickup_longitude);
-  auto destination_latitude = static_cast<double>(j_destination_latitude);
-  auto destination_longitude = static_cast<double>(j_destination_longitude);
-  int status = opacity_core::get_uber_fare_estimate(
-      pickup_latitude, pickup_longitude, destination_latitude,
-      destination_longitude, &json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getCartaProfileNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_carta_profile(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getCartaOrganizationsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_carta_organizations(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getCartaPortfolioInvestmentsNative(
-    JNIEnv *env, jobject thiz, jstring firm_id, jstring account_id) {
-  char *json, *proof, *err;
-  const char *firm_id_str = env->GetStringUTFChars(firm_id, nullptr);
-  const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
-
-  int status = opacity_core::get_carta_portfolio_investments(
-      firm_id_str, account_id_str, &json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getCartaHoldingsCompaniesNative(
-    JNIEnv *env, jobject thiz, jstring account_id) {
-  char *json, *proof, *err;
-  const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
-  int status = opacity_core::get_carta_holdings_companies(account_id_str, &json,
-                                                          &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getCartaCorporationSecuritiesNative(
-    JNIEnv *env, jobject thiz, jstring account_id, jstring corporation_id) {
-  char *json, *proof, *err;
-  const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
-  const char *corporation_id_str =
-      env->GetStringUTFChars(corporation_id, nullptr);
-  int status = opacity_core::get_carta_corporation_securities(
-      account_id_str, corporation_id_str, &json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getGithubProfileNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_github_profile(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramProfileNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_instagram_profile(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramLikesNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_instagram_likes(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramCommentsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_instagram_comments(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramSavedPostsNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_instagram_saved_posts(&json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getGustoMembersTableNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_gusto_members_table(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getGustoPayrollAdminIdNative(
-    JNIEnv *env, jobject thiz) {
-  char *json, *proof, *err;
-  int status = opacity_core::get_gusto_payroll_admin_id(&json, &proof, &err);
-
-  return createOpacityResponse(env, status, json, proof, err);
-}
-extern "C" JNIEXPORT jobject JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
                                                        jobject thiz,
                                                        jstring name,
                                                        jstring params) {
-  char *json, *proof, *err;
+  char *res, *err;
   const char *name_str = env->GetStringUTFChars(name, nullptr);
   const char *params_str =
       params != nullptr ? env->GetStringUTFChars(params, nullptr) : nullptr;
-  int status = opacity_core::get(name_str, params_str, &json, &proof, &err);
-  return createOpacityResponse(env, status, json, proof, err);
+  int status = opacity_core::get(name_str, params_str, &res, &err);
+  return createOpacityResponse(env, status, res, err);
 }
+
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getRedditAccountNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_reddit_account(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getRedditFollowedSubredditsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status =
+//       opacity_core::get_reddit_followed_subreddits(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getRedditCommentsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_reddit_comments(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getRedditPostsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_reddit_posts(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaAccountNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_zabka_account(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getZabkaPointsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_zabka_points(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getUberFareEstimate(
+//     JNIEnv *env, jobject thiz, jdouble j_pickup_latitude,
+//     jdouble j_pickup_longitude, jdouble j_destination_latitude,
+//     jdouble j_destination_longitude) {
+//   char *json, *proof, *err;
+//   auto pickup_latitude = static_cast<double>(j_pickup_latitude);
+//   auto pickup_longitude = static_cast<double>(j_pickup_longitude);
+//   auto destination_latitude = static_cast<double>(j_destination_latitude);
+//   auto destination_longitude = static_cast<double>(j_destination_longitude);
+//   int status = opacity_core::get_uber_fare_estimate(
+//       pickup_latitude, pickup_longitude, destination_latitude,
+//       destination_longitude, &json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getCartaProfileNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_carta_profile(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getCartaOrganizationsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_carta_organizations(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getCartaPortfolioInvestmentsNative(
+//     JNIEnv *env, jobject thiz, jstring firm_id, jstring account_id) {
+//   char *json, *proof, *err;
+//   const char *firm_id_str = env->GetStringUTFChars(firm_id, nullptr);
+//   const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
+//
+//   int status = opacity_core::get_carta_portfolio_investments(
+//       firm_id_str, account_id_str, &json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getCartaHoldingsCompaniesNative(
+//     JNIEnv *env, jobject thiz, jstring account_id) {
+//   char *json, *proof, *err;
+//   const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
+//   int status = opacity_core::get_carta_holdings_companies(account_id_str,
+//   &json,
+//                                                           &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getCartaCorporationSecuritiesNative(
+//     JNIEnv *env, jobject thiz, jstring account_id, jstring corporation_id) {
+//   char *json, *proof, *err;
+//   const char *account_id_str = env->GetStringUTFChars(account_id, nullptr);
+//   const char *corporation_id_str =
+//       env->GetStringUTFChars(corporation_id, nullptr);
+//   int status = opacity_core::get_carta_corporation_securities(
+//       account_id_str, corporation_id_str, &json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getGithubProfileNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_github_profile(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramProfileNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_instagram_profile(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramLikesNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_instagram_likes(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramCommentsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_instagram_comments(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getInstagramSavedPostsNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_instagram_saved_posts(&json, &proof, &err);
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getGustoMembersTableNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_gusto_members_table(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
+//
+// extern "C" JNIEXPORT jobject JNICALL
+// Java_com_opacitylabs_opacitycore_OpacityCore_getGustoPayrollAdminIdNative(
+//     JNIEnv *env, jobject thiz) {
+//   char *json, *proof, *err;
+//   int status = opacity_core::get_gusto_payroll_admin_id(&json, &proof, &err);
+//
+//   return createOpacityResponse(env, status, json, proof, err);
+// }
