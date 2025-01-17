@@ -159,11 +159,11 @@ object OpacityCore {
 //        return withContext(Dispatchers.IO) { getGustoPayrollAdminIdNative() }
 //    }
 
-    fun parseJsonElementToAny(jsonElement: JsonElement): Any {
+    private fun parseJsonElementToAny(jsonElement: JsonElement): Any {
         return when (jsonElement) {
             is JsonPrimitive -> {
                 when {
-                    jsonElement.isString -> jsonElement.toString()
+                    jsonElement.isString -> jsonElement.content
                     jsonElement.intOrNull != null -> jsonElement.int
                     jsonElement.booleanOrNull != null -> jsonElement.boolean
                     jsonElement.doubleOrNull != null -> jsonElement.double
