@@ -86,6 +86,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { Text(text = "failing lua") }
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val res = OpacityCore.get("ip_address", null)
+                                        Log.d("MainActivity", "🟦🟦🟦")
+                                        Log.d("MainActivity", res.toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            }
+                        ) { Text(text = "Get ip") }
                     }
                 }
             }

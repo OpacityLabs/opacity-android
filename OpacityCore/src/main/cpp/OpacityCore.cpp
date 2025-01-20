@@ -1,7 +1,12 @@
 #include "opacity.h"
 #include <android/log.h>
+#include <arpa/inet.h>
 #include <future>
+#include <ifaddrs.h>
 #include <jni.h>
+#include <netinet/in.h>
+#include <string>
+#include <sys/types.h>
 #include <thread>
 
 JavaVM *java_vm;
@@ -143,6 +148,42 @@ extern "C" void android_present_webview() {
   env->CallVoidMethod(java_object, method);
 }
 
+extern "C" const char *get_ip_address() {
+    struct ifaddrs *ifAddrStruct = nullptr;
+    void *tmpAddrPtr = nullptr;
+    std::string ipAddress = "Unavailable";
+
+    if (getifaddrs(&ifAddrStruct) == 0) {
+        for (struct ifaddrs *ifa = ifAddrStruct; ifa != nullptr; ifa = ifa->ifa_next) {
+            if (!ifa->ifa_addr) continue;
+
+            if (ifa->ifa_addr->sa_family == AF_INET) { // Check for IPv4
+                tmpAddrPtr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+                char addressBuffer[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+                std::string interfaceName(ifa->ifa_name);
+
+                // Skip loopback interfaces like "lo"
+                if (interfaceName != "lo") {
+                    ipAddress = addressBuffer;
+                    break;
+                }
+            }
+        }
+        freeifaddrs(ifAddrStruct);
+    }
+
+    // Allocate memory for the string and copy its content
+    char *result = new char[ipAddress.size() + 1];
+    std::strcpy(result, ipAddress.c_str());
+
+    // TODO this will leak! The problem is on iOS inet_ntoa is used which returns a static memory address
+    // while there on android we need to manage the memory ourselves :(
+    // Need to solve this later by creating an android_free_string function that can be called from Rust
+    // once the contents have been copied
+    return result; // Caller must free this memory
+}
+
 extern "C" void android_close_webview() {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
@@ -188,9 +229,9 @@ jobject createOpacityResponse(JNIEnv *env, int status, char *res, char *err) {
   jclass opacityResponseClass =
       env->FindClass("com/opacitylabs/opacitycore/OpacityResponse");
 
-  jmethodID constructor = env->GetMethodID(
-      opacityResponseClass, "<init>",
-      "(ILjava/lang/String;Ljava/lang/String;)V");
+  jmethodID constructor =
+      env->GetMethodID(opacityResponseClass, "<init>",
+                       "(ILjava/lang/String;Ljava/lang/String;)V");
 
   jobject opacityResponse;
   jstring jres, jerr;
@@ -204,8 +245,8 @@ jobject createOpacityResponse(JNIEnv *env, int status, char *res, char *err) {
     opacity_core::free_string(err);
   }
 
-  opacityResponse = env->NewObject(opacityResponseClass, constructor, status,
-                                   jres, jerr);
+  opacityResponse =
+      env->NewObject(opacityResponseClass, constructor, status, jres, jerr);
 
   return opacityResponse;
 }
