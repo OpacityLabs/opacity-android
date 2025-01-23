@@ -263,4 +263,3 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
   int status = opacity_core::get(name_str, params_str, &res, &err);
   return createOpacityResponse(env, status, res, err);
 }
-}
