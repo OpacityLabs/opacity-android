@@ -6,8 +6,19 @@ import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
 import org.mozilla.geckoview.GeckoRuntime
 
 object OpacityCore {
@@ -67,8 +78,8 @@ object OpacityCore {
     fun presentBrowser() {
         val intent = Intent()
         intent.setClassName(
-                appContext.packageName,
-                "com.opacitylabs.opacitycore.InAppBrowserActivity"
+            appContext.packageName,
+            "com.opacitylabs.opacitycore.InAppBrowserActivity"
         )
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
@@ -91,12 +102,15 @@ object OpacityCore {
                     else -> throw Exception("Could not convert JSON primitive $jsonElement")
                 }
             }
+            
             is JsonObject -> {
                 jsonElement.toMap().mapValues { parseJsonElementToAny(it.value) }
             }
+
             is JsonArray -> {
                 jsonElement.map { parseJsonElementToAny(it) }
             }
+
             else -> throw Exception("Could not convert JSON primitive $jsonElement")
         }
     }
@@ -111,9 +125,9 @@ object OpacityCore {
             }
 
             val map: Map<String, Any> =
-                    Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
-                        parseJsonElementToAny(it.value)
-                    }
+                Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
+                    parseJsonElementToAny(it.value)
+                }
             map
         }
     }

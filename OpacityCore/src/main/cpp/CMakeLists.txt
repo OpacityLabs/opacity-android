@@ -8,7 +8,6 @@ add_library(opacity_core STATIC IMPORTED)
 set_target_properties(opacity_core PROPERTIES IMPORTED_LOCATION ${OPACITY_CORE_LIB})
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
-    # List C/C++ source files with relative paths to this CMakeLists.txt.
     OpacityCore.cpp)
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/../jni/include)
