@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
         val opacityApiKey = dotenv["OPACITY_API_KEY"]
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION)
         OpacityCore.setContext(this)
     }
 }

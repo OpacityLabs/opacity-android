@@ -6,9 +6,9 @@ import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.mozilla.geckoview.GeckoRuntime
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import org.mozilla.geckoview.GeckoRuntime
 
 object OpacityCore {
     enum class Environment {
@@ -28,10 +28,12 @@ object OpacityCore {
         System.loadLibrary("OpacityCore")
     }
 
+    @JvmStatic
     fun initialize(apiKey: String, dryRun: Boolean, environment: Environment): Int {
         return init(apiKey, dryRun, environment.ordinal)
     }
 
+    @JvmStatic
     fun setContext(context: Context) {
         appContext = context
         sRuntime = GeckoRuntime.create(appContext.applicationContext)
@@ -65,8 +67,8 @@ object OpacityCore {
     fun presentBrowser() {
         val intent = Intent()
         intent.setClassName(
-            appContext.packageName,
-            "com.opacitylabs.opacitycore.InAppBrowserActivity"
+                appContext.packageName,
+                "com.opacitylabs.opacitycore.InAppBrowserActivity"
         )
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
@@ -99,16 +101,19 @@ object OpacityCore {
         }
     }
 
+    @JvmStatic
     suspend fun get(name: String, params: Map<String, Any>?): Map<String, Any> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let { Json.encodeToString(it) }
             val res = getNative(name, paramsString)
-            if(res.status != 0) {
+            if (res.status != 0) {
                 throw Exception(res.err)
             }
 
-            val map: Map<String, Any> = Json.parseToJsonElement(res.data!!).jsonObject
-                .mapValues { parseJsonElementToAny(it.value) }
+            val map: Map<String, Any> =
+                    Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
+                        parseJsonElementToAny(it.value)
+                    }
             map
         }
     }
