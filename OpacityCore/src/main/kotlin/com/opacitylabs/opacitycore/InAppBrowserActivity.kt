@@ -38,6 +38,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         localBroadcastManager.registerReceiver(
             closeReceiver,
@@ -51,15 +52,15 @@ class InAppBrowserActivity : AppCompatActivity() {
             textSize = 18f
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setOnClickListener {
-            onClose()
+                onClose()
             }
         }
 
         val layoutParams =
             ActionBar.LayoutParams(
-            ActionBar.LayoutParams.WRAP_CONTENT,
-            ActionBar.LayoutParams.WRAP_CONTENT,
-            Gravity.END or Gravity.CENTER_VERTICAL
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                Gravity.END or Gravity.CENTER_VERTICAL
             )
         supportActionBar?.setCustomView(closeButton, layoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
@@ -86,6 +87,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                                     browserCookies =
                                         JsonUtils.mergeJsonObjects(browserCookies, cookies)
                                 }
+
                                 else -> {
                                     // Intentionally left blank
                                     // Log.d("Background Script Event", "${jsonMessage.getString("event")}")
@@ -142,17 +144,17 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun emitNavigationEvent() {
-            val event: Map<String, Any> = mapOf(
-                "event" to "navigation",
-                "url" to currentUrl,
-                "html_body" to htmlBody,
-                "cookies" to browserCookies,
-                "visited_urls" to visitedUrls,
-                "id" to System.currentTimeMillis().toString()
-            )
-            val stringifiedObj = JSONObject(event).toString()
-            OpacityCore.emitWebviewEvent(stringifiedObj)
-            clearVisitedUrls()
+        val event: Map<String, Any> = mapOf(
+            "event" to "navigation",
+            "url" to currentUrl,
+            "html_body" to htmlBody,
+            "cookies" to browserCookies,
+            "visited_urls" to visitedUrls,
+            "id" to System.currentTimeMillis().toString()
+        )
+        val stringifiedObj = JSONObject(event).toString()
+        OpacityCore.emitWebviewEvent(stringifiedObj)
+        clearVisitedUrls()
     }
 
     private fun onClose() {

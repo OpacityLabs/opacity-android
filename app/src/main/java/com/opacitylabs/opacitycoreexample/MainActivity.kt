@@ -15,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.opacitylabs.opacitycore.OpacityCore
-import com.opacitylabs.opacitycore.OpacityResponse
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
@@ -99,6 +98,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { Text(text = "Get ip") }
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val res = OpacityCore.get("flow:github:profile", null)
+                                        Log.d("MainActivity", "🟦🟦🟦")
+                                        Log.d("MainActivity", res.toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            }
+                        ) { Text(text = "Get github profile") }
                     }
                 }
             }
