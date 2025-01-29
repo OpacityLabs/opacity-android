@@ -102,7 +102,7 @@ object OpacityCore {
                     else -> throw Exception("Could not convert JSON primitive $jsonElement")
                 }
             }
-            
+
             is JsonObject -> {
                 jsonElement.toMap().mapValues { parseJsonElementToAny(it.value) }
             }
@@ -116,7 +116,7 @@ object OpacityCore {
     }
 
     @JvmStatic
-    suspend fun get(name: String, params: Map<String, Any>?): Map<String, Any> {
+    suspend fun get(name: String, params: Map<String, Any?>?): Map<String, Any> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let { Json.encodeToString(it) }
             val res = getNative(name, paramsString)
