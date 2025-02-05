@@ -40,8 +40,13 @@ object OpacityCore {
     }
 
     @JvmStatic
-    fun initialize(apiKey: String, dryRun: Boolean, environment: Environment): Int {
-        return init(apiKey, dryRun, environment.ordinal)
+    fun initialize(
+        apiKey: String,
+        dryRun: Boolean,
+        environment: Environment,
+        showErrorsInWebView: Boolean
+    ): Int {
+        return init(apiKey, dryRun, environment.ordinal, showErrorsInWebView)
     }
 
     @JvmStatic
@@ -132,7 +137,12 @@ object OpacityCore {
         }
     }
 
-    private external fun init(apiKey: String, dryRun: Boolean, environment: Int): Int
+    private external fun init(
+        apiKey: String,
+        dryRun: Boolean,
+        environment: Int,
+        showErrorsInWebView: Boolean
+    ): Int
 
     private external fun getNative(name: String, params: String?): OpacityResponse
 

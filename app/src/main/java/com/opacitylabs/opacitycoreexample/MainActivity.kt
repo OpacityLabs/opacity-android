@@ -111,6 +111,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { Text(text = "Get github profile") }
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val res = OpacityCore.get("terminate", null)
+                                        Log.d("MainActivity", "🟦🟦🟦")
+                                        Log.d("MainActivity", res.toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            }
+                        ) { Text(text = "Run terminate lua") }
                     }
                 }
             }
@@ -120,7 +133,7 @@ class MainActivity : ComponentActivity() {
         val opacityApiKey = dotenv["OPACITY_API_KEY"]
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION)
         OpacityCore.setContext(this)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST, true)
     }
 }
