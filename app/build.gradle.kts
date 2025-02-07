@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.opacitylabs.opacitycoreexample"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.opacitylabs.opacitycoreexample"
