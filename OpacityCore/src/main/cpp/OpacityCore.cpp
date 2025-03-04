@@ -154,8 +154,10 @@ extern "C" const char *get_ip_address() {
     std::string ipAddress = "Unavailable";
 
     if (getifaddrs(&ifAddrStruct) == 0) {
-        for (struct ifaddrs *ifa = ifAddrStruct; ifa != nullptr; ifa = ifa->ifa_next) {
-            if (!ifa->ifa_addr) continue;
+        for (struct ifaddrs *ifa = ifAddrStruct; ifa != nullptr;
+             ifa = ifa->ifa_next) {
+            if (!ifa->ifa_addr)
+                continue;
 
             if (ifa->ifa_addr->sa_family == AF_INET) { // Check for IPv4
                 tmpAddrPtr = &((struct sockaddr_in *) ifa->ifa_addr)->sin_addr;
@@ -177,10 +179,10 @@ extern "C" const char *get_ip_address() {
     char *result = new char[ipAddress.size() + 1];
     std::strcpy(result, ipAddress.c_str());
 
-    // TODO this will leak! The problem is on iOS inet_ntoa is used which returns a static memory address
-    // while there on android we need to manage the memory ourselves :(
-    // Need to solve this later by creating an android_free_string function that can be called from Rust
-    // once the contents have been copied
+    // TODO this will leak! The problem is on iOS inet_ntoa is used which returns
+    // a static memory address while there on android we need to manage the memory
+    // ourselves :( Need to solve this later by creating an android_free_string
+    // function that can be called from Rust once the contents have been copied
     return result; // Caller must free this memory
 }
 
@@ -197,28 +199,17 @@ extern "C" void android_close_webview() {
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_init(JNIEnv *env, jobject thiz,
-                                                  jstring api_key,
-                                                  jboolean dry_run,
-                                                  jint environment_enum,
-                                                  jboolean show_errors_in_webview) {
+Java_com_opacitylabs_opacitycore_OpacityCore_init(
+        JNIEnv *env, jobject thiz, jstring api_key, jboolean dry_run,
+        jint environment_enum, jboolean show_errors_in_webview) {
     java_object = env->NewGlobalRef(thiz);
     const char *api_key_str = env->GetStringUTFChars(api_key, nullptr);
     int result = opacity_core::init(api_key_str, dry_run,
-                                    static_cast<int>(environment_enum), show_errors_in_webview);
+                                    static_cast<int>(environment_enum),
+                                    show_errors_in_webview);
     return result;
 }
 
-// extern "C" JNIEXPORT void JNICALL
-// Java_com_opacitylabs_opacitycore_OpacityCore_executeFlow(JNIEnv *env,
-//                                                          jobject thiz,
-//                                                          jstring flow) {
-//   const char *flow_str = env->GetStringUTFChars(flow, nullptr);
-//   std::thread([flow_str]() {
-//     opacity_core::execute_workflow(flow_str);
-//   }).detach();
-// }
-//
 extern "C" JNIEXPORT void JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_emitWebviewEvent(
         JNIEnv *env, jobject thiz, jstring event_json) {
@@ -263,4 +254,13 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
             params != nullptr ? env->GetStringUTFChars(params, nullptr) : nullptr;
     int status = opacity_core::get(name_str, params_str, &res, &err);
     return createOpacityResponse(env, status, res, err);
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getSdkVersions(JNIEnv *env,
+                                                            jobject thiz) {
+    const char *res = opacity_core::get_sdk_versions();
+    jstring jres = env->NewStringUTF(res);
+//    opacity_core::free_string(res);
+    return jres;
 }

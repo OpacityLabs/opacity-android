@@ -145,6 +145,7 @@ object OpacityCore {
     ): Int
 
     private external fun getNative(name: String, params: String?): OpacityResponse
+    external fun getSdkVersions(): String
 
     external fun emitWebviewEvent(eventJson: String)
 }

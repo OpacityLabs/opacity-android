@@ -70,6 +70,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Run Flow") }
+
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val sdkVersions = OpacityCore.getSdkVersions()
+                                        Log.d("MainActivity", "SDK Versions: $sdkVersions")
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            },
+                        ) { Text(text = "Get SDK Versions") }
                     }
                 }
             }
