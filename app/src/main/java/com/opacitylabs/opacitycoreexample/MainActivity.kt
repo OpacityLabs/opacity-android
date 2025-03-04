@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.opacitylabs.opacitycore.OpacityCore
@@ -23,8 +26,7 @@ import java.io.InputStreamReader
 class MainActivity : ComponentActivity() {
     private fun loadEnvFile(context: Context): Map<String, String> {
         val envMap = mutableMapOf<String, String>()
-        val inputStream =
-            context.assets.open("env")
+        val inputStream = context.assets.open("env")
 
         BufferedReader(InputStreamReader(inputStream)).use { reader ->
             reader.lineSequence().forEach { line ->
@@ -48,82 +50,26 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
+                        val flowInput = remember { mutableStateOf("") }
+
+                        TextField(
+                            value = flowInput.value,
+                            onValueChange = { flowInput.value = it },
+                            label = { Text("Enter flow") }
+                        )
+
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
                                     try {
-                                        val res = OpacityCore.get("flow:uber_rider:profile", null)
+                                        val res = OpacityCore.get(flowInput.value, null)
                                         Log.d("MainActivity", res["json"].toString())
                                     } catch (e: Exception) {
                                         Log.e("MainActivity", e.toString())
                                     }
                                 }
                             },
-                        ) { Text(text = "Get uber driver profile") }
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("generate_proof", null)
-                                        Log.d("MainActivity", res["json"].toString())
-                                        Log.d("MainActivity", res["signature"].toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
-                                }
-                            },
-                        ) { Text(text = "Generate Proof") }
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("quack", null)
-                                        Log.d("MainActivity", res["json"].toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
-                                }
-                            }
-                        ) { Text(text = "failing lua") }
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("ip_address", null)
-                                        Log.d("MainActivity", "🟦🟦🟦")
-                                        Log.d("MainActivity", res.toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
-                                }
-                            }
-                        ) { Text(text = "Get ip") }
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("flow:github:profile", null)
-                                        Log.d("MainActivity", "🟦🟦🟦")
-                                        Log.d("MainActivity", res.toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
-                                }
-                            }
-                        ) { Text(text = "Get github profile") }
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("terminate", null)
-                                        Log.d("MainActivity", "🟦🟦🟦")
-                                        Log.d("MainActivity", res.toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
-                                }
-                            }
-                        ) { Text(text = "Run terminate lua") }
+                        ) { Text(text = "Run Flow") }
                     }
                 }
             }
@@ -134,6 +80,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
     }
 }
