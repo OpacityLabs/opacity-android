@@ -83,6 +83,22 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Get SDK Versions") }
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val dotenv = loadEnvFile(this@MainActivity)
+                                        val opacityApiKey = dotenv["OPACITY_API_KEY"]
+                                        requireNotNull(opacityApiKey) { "Opacity API key is null" }
+
+                                        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
+                                        Log.d("MainActivity", "Opacity SDK re-initialized")
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            },
+                        ) { Text(text = "Re-initialize SDK") }
                     }
                 }
             }
