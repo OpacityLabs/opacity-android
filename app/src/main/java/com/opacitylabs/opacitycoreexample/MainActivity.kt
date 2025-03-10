@@ -52,6 +52,19 @@ class MainActivity : ComponentActivity() {
                     Column(modifier = Modifier.padding(innerPadding)) {
                         val flowInput = remember { mutableStateOf("") }
 
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val res = OpacityCore.get("uber_rider:profile", null)
+                                        Log.d("MainActivity", res["json"].toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            },
+                        ) { Text(text = "Uber Rider Profile") }
+
                         TextField(
                             value = flowInput.value,
                             onValueChange = { flowInput.value = it },
@@ -91,7 +104,12 @@ class MainActivity : ComponentActivity() {
                                         val opacityApiKey = dotenv["OPACITY_API_KEY"]
                                         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
-                                        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
+                                        OpacityCore.initialize(
+                                            opacityApiKey,
+                                            false,
+                                            OpacityCore.Environment.PRODUCTION,
+                                            true
+                                        )
                                         Log.d("MainActivity", "Opacity SDK re-initialized")
                                     } catch (e: Exception) {
                                         Log.e("MainActivity", e.toString())
