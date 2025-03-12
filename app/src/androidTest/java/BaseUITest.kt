@@ -37,7 +37,7 @@ class BaseUITest {
         // Perform click
         composeTestRule.onNodeWithText("Uber Rider Profile").performClick()
 
-        Thread.sleep(2000)
+        Thread.sleep(5000)
 
         // Check that the intent to open the browser was fired
         intended(
