@@ -37,13 +37,12 @@ class BaseUITest {
         // Perform click
         composeTestRule.onNodeWithText("Uber Rider Profile").performClick()
 
-        Thread.sleep(5000)
+        Thread.sleep(2000)
 
         // Check that the intent to open the browser was fired
         intended(
             allOf(
                 hasComponent("com.opacitylabs.opacitycore.InAppBrowserActivity"),
-//                hasExtra("url", "https://uber.opacitylabs.com/rider")
             )
         )
     }
