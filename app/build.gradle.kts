@@ -85,6 +85,6 @@ fun getCurrentArchitecture(): String {
     return when {
         arch.contains("aarch64") || arch.contains("arm64") -> "arm64-v8a"
         arch.contains("x86_64") || arch.contains("amd64") -> "x86_64"
-        else -> throw GradleException("Unsupported architecture: $arch")
+        else -> "x86_64"
     }
 }
