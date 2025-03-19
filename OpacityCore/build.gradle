@@ -18,6 +18,12 @@ android {
                 cppFlags ''
             }
         }
+
+        if (isRunningOnCI()) {
+            ndk {
+                abiFilters getCurrentArchitecture()
+            }
+        }
     }
 
     buildTypes {
@@ -74,4 +80,21 @@ publishing {
             }
         }
     }
+}
+
+// Function to detect the current architecture
+def getCurrentArchitecture() {
+    def arch = System.getProperty("os.arch")
+    if (arch.contains("aarch64") || arch.contains("arm64")) {
+        return "arm64-v8a"
+    } else if (arch.contains("x86_64") || arch.contains("amd64")) {
+        return "x86_64"
+    } else {
+        return "x86_64"
+    }
+}
+
+// Function to check if running on CI in test configuration
+def isRunningOnCI() {
+    return System.getenv("CI_TEST")?.toBoolean() ?: false
 }
