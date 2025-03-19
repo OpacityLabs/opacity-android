@@ -19,9 +19,9 @@ android {
             useSupportLibrary = true
         }
 
-        // ndk {
-        //     abiFilters += listOf(getCurrentArchitecture())
-        // }
+        ndk {
+            abiFilters += listOf(getCurrentArchitecture())
+        }
     }
 
     sourceSets {
@@ -80,11 +80,11 @@ dependencies {
 }
 
 // Function to detect the current architecture
-// fun getCurrentArchitecture(): String {
-//     val arch = System.getProperty("os.arch")
-//     return when {
-//         arch.contains("aarch64") || arch.contains("arm64") -> "arm64-v8a"
-//         arch.contains("x86_64") || arch.contains("amd64") -> "x86_64"
-//         else -> throw GradleException("Unsupported architecture: $arch")
-//     }
-// }
+fun getCurrentArchitecture(): String {
+    val arch = System.getProperty("os.arch")
+    return when {
+        arch.contains("aarch64") || arch.contains("arm64") -> "arm64-v8a"
+        arch.contains("x86_64") || arch.contains("amd64") -> "x86_64"
+        else -> throw GradleException("Unsupported architecture: $arch")
+    }
+}
