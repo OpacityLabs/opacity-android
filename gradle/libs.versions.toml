@@ -1,6 +1,6 @@
 [versions]
-agp = "8.3.0"
-geckoview = "132.0.20241110192737"
+agp = "8.4.0"
+geckoview = "137.0.20250414091429"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -18,7 +18,7 @@ espressoIntents = "3.6.1"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
-geckoview-nightly = { module = "org.mozilla.geckoview:geckoview", version.ref = "geckoview" }
+geckoview = { module = "org.mozilla.geckoview:geckoview", version.ref = "geckoview" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -43,4 +43,3 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version = "1.9.0" }
-
