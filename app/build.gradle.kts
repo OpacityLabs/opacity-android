@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId = "com.opacitylabs.opacitycoreexample"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -19,9 +19,6 @@ android {
             useSupportLibrary = true
         }
 
-        ndk {
-            abiFilters += listOf(getCurrentArchitecture())
-        }
     }
 
     sourceSets {
@@ -29,7 +26,7 @@ android {
             resources.srcDir("src/main/resources")
         }
     }
-
+    
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -37,6 +34,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -77,14 +75,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-}
-
-// Function to detect the current architecture
-fun getCurrentArchitecture(): String {
-    val arch = System.getProperty("os.arch")
-    return when {
-        arch.contains("aarch64") || arch.contains("arm64") -> "arm64-v8a"
-        arch.contains("x86_64") || arch.contains("amd64") -> "x86_64"
-        else -> "x86_64"
-    }
 }
