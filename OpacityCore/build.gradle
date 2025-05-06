@@ -96,5 +96,5 @@ def getCurrentArchitecture() {
 
 // Function to check if running on CI in test configuration
 def isRunningOnCI() {
-    return System.getenv("CI_TEST")?.toBoolean() ?: false
+    return System.getenv("CI")?.toBoolean() ?: false
 }
