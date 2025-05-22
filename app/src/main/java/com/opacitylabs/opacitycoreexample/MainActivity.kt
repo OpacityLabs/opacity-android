@@ -105,6 +105,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Re-initialize SDK") }
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val res = OpacityCore.get("uber_rider:profile", null)
+                                        Log.d("MainActivity", res["json"].toString())
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            },
+                        ) { Text(text = "Uber Rider Profile") }
                     }
                 }
             }
@@ -115,6 +127,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.STAGING, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
     }
 }
