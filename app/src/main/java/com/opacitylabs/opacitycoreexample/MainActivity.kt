@@ -50,20 +50,7 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("") }
-
-                        Button(
-                            onClick = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("uber_rider:profile", null)
-                                        Log.d("MainActivity", res["json"].toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
-                                }
-                            },
-                        ) { Text(text = "Uber Rider Profile") }
+                        val flowInput = remember { mutableStateOf("github:profile") }
 
                         TextField(
                             value = flowInput.value,
@@ -76,7 +63,8 @@ class MainActivity : ComponentActivity() {
                                 lifecycleScope.launch {
                                     try {
                                         val res = OpacityCore.get(flowInput.value, null)
-                                        Log.d("MainActivity", res["json"].toString())
+                                        Log.d("MainActivity", "🟩🟩🟩")
+                                        Log.d("MainActivity", res.toString())
                                     } catch (e: Exception) {
                                         Log.e("MainActivity", e.toString())
                                     }
@@ -127,6 +115,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.STAGING, true)
     }
 }

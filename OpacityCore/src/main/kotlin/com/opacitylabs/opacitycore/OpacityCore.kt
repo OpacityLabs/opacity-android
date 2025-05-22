@@ -10,6 +10,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
@@ -96,8 +97,18 @@ object OpacityCore {
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
     }
 
-    private fun parseJsonElementToAny(jsonElement: JsonElement): Any {
+    private fun parseJsonElementToAny(jsonElement: JsonElement): Any? {
         return when (jsonElement) {
+            is JsonObject -> {
+                jsonElement.toMap().mapValues { parseJsonElementToAny(it.value) }
+            }
+
+            is JsonArray -> {
+                jsonElement.map { parseJsonElementToAny(it) }
+            }
+
+            is JsonNull -> null
+
             is JsonPrimitive -> {
                 when {
                     jsonElement.isString -> jsonElement.content
@@ -108,20 +119,12 @@ object OpacityCore {
                 }
             }
 
-            is JsonObject -> {
-                jsonElement.toMap().mapValues { parseJsonElementToAny(it.value) }
-            }
-
-            is JsonArray -> {
-                jsonElement.map { parseJsonElementToAny(it) }
-            }
-
             else -> throw Exception("Could not convert JSON primitive $jsonElement")
         }
     }
 
     @JvmStatic
-    suspend fun get(name: String, params: Map<String, Any?>?): Map<String, Any> {
+    suspend fun get(name: String, params: Map<String, Any?>?): Map<String, Any?> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let { Json.encodeToString(it) }
             val res = getNative(name, paramsString)
@@ -129,7 +132,7 @@ object OpacityCore {
                 throw Exception(res.err)
             }
 
-            val map: Map<String, Any> =
+            val map: Map<String, Any?> =
                 Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
                     parseJsonElementToAny(it.value)
                 }
