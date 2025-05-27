@@ -198,6 +198,23 @@ extern "C" void android_close_webview() {
   env->CallVoidMethod(java_object, method);
 }
 
+extern "C" const char *android_get_browser_cookies_for_current_url() {
+  JNIEnv *env = GetJniEnv();
+
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+
+  jmethodID method = env->GetMethodID(
+      jOpacityCore, "getBrowserCookiesForCurrentUrl", "()Ljava/lang/String;");
+  auto res = (jstring)env->CallObjectMethod(java_object, method);
+
+  if (res == nullptr) {
+    return nullptr;
+  }
+
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  return val_str;
+}
+
 extern "C" JNIEXPORT jint JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_init(
     JNIEnv *env, jobject thiz, jstring api_key, jboolean dry_run,

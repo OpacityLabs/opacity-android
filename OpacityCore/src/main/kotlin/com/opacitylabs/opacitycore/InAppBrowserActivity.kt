@@ -20,13 +20,24 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
 
 class InAppBrowserActivity : AppCompatActivity() {
-    private val closeReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == "com.opacitylabs.opacitycore.CLOSE_BROWSER") {
-                finish()
+    private val closeReceiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action == "com.opacitylabs.opacitycore.CLOSE_BROWSER") {
+                        finish()
+                    }
+                }
             }
-        }
-    }
+
+    private val cookieRequestReceiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES") {
+                        val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
+                        receiver?.onReceiveResult(browserCookies)
+                    }
+                }
+            }
 
     private lateinit var geckoSession: GeckoSession
     private lateinit var geckoView: GeckoView
@@ -38,130 +49,137 @@ class InAppBrowserActivity : AppCompatActivity() {
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         localBroadcastManager.registerReceiver(
-            closeReceiver,
-            IntentFilter("com.opacitylabs.opacitycore.CLOSE_BROWSER")
+                closeReceiver,
+                IntentFilter("com.opacitylabs.opacitycore.CLOSE_BROWSER")
+        )
+
+        localBroadcastManager.registerReceiver(
+                cookieRequestReceiver,
+                IntentFilter("com.opacitylabs.opacitycore.GET_COOKIES")
         )
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-        val closeButton = Button(this, null, android.R.attr.buttonStyleSmall).apply {
-            text = "✕"
-            textSize = 18f
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setOnClickListener {
-                onClose()
-            }
-        }
+        val closeButton =
+                Button(this, null, android.R.attr.buttonStyleSmall).apply {
+                    text = "✕"
+                    textSize = 18f
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    setOnClickListener { onClose() }
+                }
 
         val layoutParams =
-            ActionBar.LayoutParams(
-                ActionBar.LayoutParams.WRAP_CONTENT,
-                ActionBar.LayoutParams.WRAP_CONTENT,
-                Gravity.END or Gravity.CENTER_VERTICAL
-            )
+                ActionBar.LayoutParams(
+                        ActionBar.LayoutParams.WRAP_CONTENT,
+                        ActionBar.LayoutParams.WRAP_CONTENT,
+                        Gravity.END or Gravity.CENTER_VERTICAL
+                )
         supportActionBar?.setCustomView(closeButton, layoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
-        OpacityCore.getRuntime().webExtensionController.installBuiltIn("resource://android/assets/extension/")
-            .accept { ext ->
-                ext?.setMessageDelegate(
-                    object : WebExtension.MessageDelegate {
-                        override fun onMessage(
-                            nativeApp: String,
-                            message: Any,
-                            sender: WebExtension.MessageSender
-                        ): GeckoResult<Any>? {
-                            val jsonMessage = message as JSONObject
+        OpacityCore.getRuntime()
+                .webExtensionController
+                .installBuiltIn("resource://android/assets/extension/")
+                .accept { ext ->
+                    ext?.setMessageDelegate(
+                            object : WebExtension.MessageDelegate {
+                                override fun onMessage(
+                                        nativeApp: String,
+                                        message: Any,
+                                        sender: WebExtension.MessageSender
+                                ): GeckoResult<Any>? {
+                                    val jsonMessage = message as JSONObject
 
-                            when (jsonMessage.getString("event")) {
-                                "html_body" -> {
-                                    htmlBody = jsonMessage.getString("html")
-                                    emitNavigationEvent()
+                                    when (jsonMessage.getString("event")) {
+                                        "html_body" -> {
+                                            htmlBody = jsonMessage.getString("html")
+                                            emitNavigationEvent()
+                                        }
+                                        "cookies" -> {
+                                            val cookies = jsonMessage.getJSONObject("cookies")
+                                            browserCookies =
+                                                    JsonUtils.mergeJsonObjects(
+                                                            browserCookies,
+                                                            cookies
+                                                    )
+                                        }
+                                        else -> {
+                                            // Intentionally left blank
+                                            // Log.d("Background Script Event",
+                                            // "${jsonMessage.getString("event")}")
+                                        }
+                                    }
+
+                                    return super.onMessage(nativeApp, message, sender)
+                                }
+                            },
+                            "gecko"
+                    )
+
+                    geckoSession =
+                            GeckoSession().apply {
+                                setContentDelegate(object : ContentDelegate {})
+                                open(OpacityCore.getRuntime())
+                            }
+
+                    geckoSession.settings.apply { allowJavascript = true }
+
+                    geckoSession.navigationDelegate =
+                            object : GeckoSession.NavigationDelegate {
+                                override fun onLoadRequest(
+                                        session: GeckoSession,
+                                        request: GeckoSession.NavigationDelegate.LoadRequest
+                                ): GeckoResult<AllowOrDeny>? {
+                                    currentUrl = request.uri
+                                    addToVisitedUrls(request.uri)
+                                    return super.onLoadRequest(session, request)
                                 }
 
-                                "cookies" -> {
-                                    val cookies = jsonMessage.getJSONObject("cookies")
-                                    browserCookies =
-                                        JsonUtils.mergeJsonObjects(browserCookies, cookies)
-                                }
-
-                                else -> {
-                                    // Intentionally left blank
-                                    // Log.d("Background Script Event", "${jsonMessage.getString("event")}")
+                                override fun onLocationChange(
+                                        session: GeckoSession,
+                                        url: String?,
+                                        perms:
+                                                MutableList<
+                                                        GeckoSession.PermissionDelegate.ContentPermission>,
+                                        hasUserGesture: Boolean
+                                ) {
+                                    if (url != null) {
+                                        currentUrl = url
+                                        addToVisitedUrls(url)
+                                    }
                                 }
                             }
 
-                            return super.onMessage(nativeApp, message, sender)
-                        }
+                    geckoView = GeckoView(this).apply { setSession(geckoSession) }
 
-                    }, "gecko"
-                )
+                    setContentView(geckoView)
+                    val url = intent.getStringExtra("url")!!
 
-                geckoSession = GeckoSession().apply {
-                    setContentDelegate(object : ContentDelegate {})
-                    open(OpacityCore.getRuntime())
+                    geckoSession.loadUri(url)
                 }
-
-                geckoSession.settings.apply {
-                    allowJavascript = true
-                }
-
-                geckoSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
-                    override fun onLoadRequest(
-                        session: GeckoSession,
-                        request: GeckoSession.NavigationDelegate.LoadRequest
-                    ): GeckoResult<AllowOrDeny>? {
-                        currentUrl = request.uri
-                        addToVisitedUrls(request.uri)
-                        return super.onLoadRequest(session, request)
-                    }
-
-                    override fun onLocationChange(
-                        session: GeckoSession,
-                        url: String?,
-                        perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
-                        hasUserGesture: Boolean
-                    ) {
-                        if (url != null) {
-                            currentUrl = url
-                            addToVisitedUrls(url)
-                        }
-                    }
-                }
-
-                geckoView = GeckoView(this).apply {
-                    setSession(geckoSession)
-                }
-
-                setContentView(geckoView)
-                val url = intent.getStringExtra("url")!!
-
-                geckoSession.loadUri(url)
-            }
     }
 
     private fun emitNavigationEvent() {
-        val event: Map<String, Any> = mapOf(
-            "event" to "navigation",
-            "url" to currentUrl,
-            "html_body" to htmlBody,
-            "cookies" to browserCookies,
-            "visited_urls" to visitedUrls,
-            "id" to System.currentTimeMillis().toString()
-        )
+        val event: Map<String, Any> =
+                mapOf(
+                        "event" to "navigation",
+                        "url" to currentUrl,
+                        "html_body" to htmlBody,
+                        "cookies" to browserCookies,
+                        "visited_urls" to visitedUrls,
+                        "id" to System.currentTimeMillis().toString()
+                )
         val stringifiedObj = JSONObject(event).toString()
         OpacityCore.emitWebviewEvent(stringifiedObj)
         clearVisitedUrls()
     }
 
     private fun onClose() {
-        val event: Map<String, Any> = mapOf(
-            "event" to "close",
-            "id" to System.currentTimeMillis().toString()
-        )
+        val event: Map<String, Any> =
+                mapOf("event" to "close", "id" to System.currentTimeMillis().toString())
         val stringifiedObj = JSONObject(event).toString()
         OpacityCore.emitWebviewEvent(stringifiedObj)
         finish()
@@ -181,6 +199,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(closeReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(cookieRequestReceiver)
         geckoSession.close()
     }
 }

@@ -4,21 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.opacitylabs.opacitycore.JsonToAnyConverter.Companion.parseJsonElementToAny
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.boolean
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.double
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import org.mozilla.geckoview.GeckoRuntime
 
@@ -92,35 +82,18 @@ object OpacityCore {
         appContext.startActivity(intent)
     }
 
+    fun getBrowserCookiesForCurrentUrl(): String {
+        val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES")
+        val resultReceiver = CookieResultReceiver()
+        cookiesIntent.putExtra("receiver", resultReceiver)
+        LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
+        val json = resultReceiver.waitForResult(1000) // Wait up to 1 second for the result
+        return json.toString()
+    }
+
     fun closeBrowser() {
         val closeIntent = Intent("com.opacitylabs.opacitycore.CLOSE_BROWSER")
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
-    }
-
-    private fun parseJsonElementToAny(jsonElement: JsonElement): Any? {
-        return when (jsonElement) {
-            is JsonObject -> {
-                jsonElement.toMap().mapValues { parseJsonElementToAny(it.value) }
-            }
-
-            is JsonArray -> {
-                jsonElement.map { parseJsonElementToAny(it) }
-            }
-
-            is JsonNull -> null
-
-            is JsonPrimitive -> {
-                when {
-                    jsonElement.isString -> jsonElement.content
-                    jsonElement.intOrNull != null -> jsonElement.int
-                    jsonElement.booleanOrNull != null -> jsonElement.boolean
-                    jsonElement.doubleOrNull != null -> jsonElement.double
-                    else -> throw Exception("Could not convert JSON primitive $jsonElement")
-                }
-            }
-
-            else -> throw Exception("Could not convert JSON primitive $jsonElement")
-        }
     }
 
     @JvmStatic
@@ -149,6 +122,5 @@ object OpacityCore {
 
     private external fun getNative(name: String, params: String?): OpacityResponse
     external fun getSdkVersions(): String
-
     external fun emitWebviewEvent(eventJson: String)
 }
