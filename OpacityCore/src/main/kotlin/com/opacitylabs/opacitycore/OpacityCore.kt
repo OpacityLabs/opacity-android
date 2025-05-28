@@ -26,6 +26,7 @@ object OpacityCore {
     enum class Environment {
         TEST,
         LOCAL,
+        SANDBOX,
         STAGING,
         PRODUCTION,
     }
