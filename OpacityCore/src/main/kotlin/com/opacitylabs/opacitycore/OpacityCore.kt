@@ -79,7 +79,7 @@ object OpacityCore {
     }
 
     fun setBrowserHeader(key: String, value: String) {
-        headers.putString(key, value)
+        headers.putString(key.lowercase(), value)
     }
 
     fun presentBrowser() {
