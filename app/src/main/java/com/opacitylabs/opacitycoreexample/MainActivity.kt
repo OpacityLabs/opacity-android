@@ -127,6 +127,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.LOCAL, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
     }
 }

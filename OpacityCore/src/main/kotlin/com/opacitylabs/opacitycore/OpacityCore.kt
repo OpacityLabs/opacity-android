@@ -92,6 +92,10 @@ object OpacityCore {
         return json.toString()
     }
 
+    fun getBrowserCookiesForDomain(domain: String): String {
+        return "{}"
+    }
+
     fun closeBrowser() {
         val closeIntent = Intent("com.opacitylabs.opacitycore.CLOSE_BROWSER")
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)

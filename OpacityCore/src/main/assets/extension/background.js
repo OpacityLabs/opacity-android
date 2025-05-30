@@ -1,5 +1,9 @@
 browser.webRequest.onHeadersReceived.addListener(
   function (details) {
+    let url = details.url;
+
+    let domain = new URL(url).hostname;
+
     let cookiesHeaders = details.responseHeaders.filter(
       (header) => header.name.toLowerCase() === "set-cookie"
     );
@@ -30,6 +34,7 @@ browser.webRequest.onHeadersReceived.addListener(
     browser.runtime.sendNativeMessage("gecko", {
       event: "cookies",
       cookies: cookieDict,
+      domain: domain,
     });
   },
   { urls: ["<all_urls>"] }, // Intercept all URLs
@@ -37,29 +42,32 @@ browser.webRequest.onHeadersReceived.addListener(
 );
 
 browser.webNavigation.onDOMContentLoaded.addListener(function (details) {
-  if (details.frameId === 0) { // Ensure it's the top-level frame
+  if (details.frameId === 0) {
+    // Ensure it's the top-level frame
     // Inject a script to fetch the outerHTML of the current document
-    browser.tabs.executeScript(details.tabId, {
-      code: "document.documentElement.outerHTML"
-    }).then(result => {
-      if (result && result.length > 0) {
-        const htmlBody = result[0]; // The outerHTML of the page
+    browser.tabs
+      .executeScript(details.tabId, {
+        code: "document.documentElement.outerHTML",
+      })
+      .then((result) => {
+        if (result && result.length > 0) {
+          const htmlBody = result[0]; // The outerHTML of the page
 
-        // Send the HTML content and cookies to the native app
+          // Send the HTML content and cookies to the native app
+          browser.runtime.sendNativeMessage("gecko", {
+            event: "html_body",
+            html: htmlBody,
+          });
+        } else {
+          browser.runtime.sendNativeMessage("gecko", {
+            event: "No results when getting outerHTML",
+          });
+        }
+      })
+      .catch((err) => {
         browser.runtime.sendNativeMessage("gecko", {
-          event: "html_body",
-          html: htmlBody
+          event: "Execute script error: " + err.toString(),
         });
-
-      } else {
-        browser.runtime.sendNativeMessage("gecko", {
-          event: "No results when getting outerHTML",
-        });
-      }
-    }).catch(err => {
-      browser.runtime.sendNativeMessage("gecko", {
-        event: "Execute script error: " + err.toString(),
       });
-    })
   }
 });
