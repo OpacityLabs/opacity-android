@@ -109,6 +109,12 @@ class InAppBrowserActivity : AppCompatActivity() {
                     allowJavascript = true
                 }
 
+                val headers: Bundle? = intent.getBundleExtra("headers")
+                val customUserAgent = headers?.getString("user-agent")
+                if (customUserAgent != null) {
+                    geckoSession.settings.userAgentOverride = customUserAgent
+                }
+
                 geckoSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
                     override fun onLoadRequest(
                         session: GeckoSession,
