@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import androidx.appcompat.app.ActionBar
@@ -30,19 +29,33 @@ class InAppBrowserActivity : AppCompatActivity() {
             }
         }
 
-    private val cookieRequestReceiver =
+    private val cookiesForCurrentURLRequestReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES") {
+                if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL"
+                ) {
                     val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
+                    val domain = java.net.URL(currentUrl).host
+                    val browserCookies = cookies[domain] ?: JSONObject()
                     receiver?.onReceiveResult(browserCookies)
                 }
             }
         }
 
+    private val cookiesForDomainRequestReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN") {
+                val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
+                val domain = intent.getStringExtra("domain")
+                val browserCookies = cookies[domain] ?: JSONObject()
+                receiver?.onReceiveResult(browserCookies)
+            }
+        }
+    }
+
     private lateinit var geckoSession: GeckoSession
     private lateinit var geckoView: GeckoView
-    private var browserCookies: JSONObject = JSONObject()
+    private var cookies: MutableMap<String, JSONObject> = mutableMapOf()
     private var htmlBody: String = ""
     private var currentUrl: String = ""
     private val visitedUrls = mutableListOf<String>()
@@ -58,8 +71,13 @@ class InAppBrowserActivity : AppCompatActivity() {
         )
 
         localBroadcastManager.registerReceiver(
-            cookieRequestReceiver,
-            IntentFilter("com.opacitylabs.opacitycore.GET_COOKIES")
+            cookiesForCurrentURLRequestReceiver,
+            IntentFilter("com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL")
+        )
+
+        localBroadcastManager.registerReceiver(
+            cookiesForDomainRequestReceiver,
+            IntentFilter("com.oapcitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
         )
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -94,6 +112,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                         ): GeckoResult<Any>? {
                             val jsonMessage = message as JSONObject
 
+                            // This are the messages from our injected JS script to extract
+                            // cookies
                             when (jsonMessage.getString("event")) {
                                 "html_body" -> {
                                     htmlBody = jsonMessage.getString("html")
@@ -101,21 +121,22 @@ class InAppBrowserActivity : AppCompatActivity() {
                                 }
 
                                 "cookies" -> {
-                                    val cookies = jsonMessage.getJSONObject("cookies")
+                                    val receivedCookies =
+                                        jsonMessage.getJSONObject("cookies")
                                     val domain = jsonMessage.getString("domain")
-                                    // TODO handle cookies, so we can implement get_browser_cookies_for domain
-                                    Log.d("Background script event", "COOKIES. Domain: $domain")
-                                    browserCookies =
-                                        JsonUtils.mergeJsonObjects(
-                                            browserCookies,
-                                            cookies
-                                        )
+
+                                    cookies[domain] =
+                                        cookies[domain]?.let { existingCookies ->
+                                            JsonUtils.mergeJsonObjects(
+                                                receivedCookies,
+                                                existingCookies
+                                            )
+                                        }
+                                            ?: receivedCookies
                                 }
 
                                 else -> {
                                     // Intentionally left blank
-                                    // Log.d("Background Script Event",
-                                    // "${jsonMessage.getString("event")}")
                                 }
                             }
 
@@ -139,15 +160,16 @@ class InAppBrowserActivity : AppCompatActivity() {
                     geckoSession.settings.userAgentOverride = customUserAgent
                 }
 
-                geckoSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
-                    override fun onLoadRequest(
-                        session: GeckoSession,
-                        request: GeckoSession.NavigationDelegate.LoadRequest
-                    ): GeckoResult<AllowOrDeny>? {
-                        currentUrl = request.uri
-                        addToVisitedUrls(request.uri)
-                        return super.onLoadRequest(session, request)
-                    }
+                geckoSession.navigationDelegate =
+                    object : GeckoSession.NavigationDelegate {
+                        override fun onLoadRequest(
+                            session: GeckoSession,
+                            request: GeckoSession.NavigationDelegate.LoadRequest
+                        ): GeckoResult<AllowOrDeny>? {
+                            currentUrl = request.uri
+                            addToVisitedUrls(request.uri)
+                            return super.onLoadRequest(session, request)
+                        }
 
                         override fun onLocationChange(
                             session: GeckoSession,
@@ -174,25 +196,24 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun emitNavigationEvent() {
-        val event: Map<String, Any> =
+        val domain = java.net.URL(currentUrl).host
+        val event: Map<String, Any?> =
             mapOf(
                 "event" to "navigation",
                 "url" to currentUrl,
                 "html_body" to htmlBody,
-                "cookies" to browserCookies,
+                "cookies" to cookies[domain],
                 "visited_urls" to visitedUrls,
                 "id" to System.currentTimeMillis().toString()
             )
-        val stringifiedObj = JSONObject(event).toString()
-        OpacityCore.emitWebviewEvent(stringifiedObj)
+        OpacityCore.emitWebviewEvent(JSONObject(event).toString())
         clearVisitedUrls()
     }
 
     private fun onClose() {
         val event: Map<String, Any> =
             mapOf("event" to "close", "id" to System.currentTimeMillis().toString())
-        val stringifiedObj = JSONObject(event).toString()
-        OpacityCore.emitWebviewEvent(stringifiedObj)
+        OpacityCore.emitWebviewEvent(JSONObject(event).toString())
         finish()
     }
 
@@ -210,7 +231,9 @@ class InAppBrowserActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(closeReceiver)
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(cookieRequestReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(cookiesForDomainRequestReceiver)
+        LocalBroadcastManager.getInstance(this)
+            .unregisterReceiver(cookiesForCurrentURLRequestReceiver)
         geckoSession.close()
     }
 }
