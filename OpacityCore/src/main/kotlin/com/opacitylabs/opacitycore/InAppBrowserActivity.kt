@@ -133,16 +133,21 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                 geckoSession.settings.apply { allowJavascript = true }
 
-                geckoSession.navigationDelegate =
-                    object : GeckoSession.NavigationDelegate {
-                        override fun onLoadRequest(
-                            session: GeckoSession,
-                            request: GeckoSession.NavigationDelegate.LoadRequest
-                        ): GeckoResult<AllowOrDeny>? {
-                            currentUrl = request.uri
-                            addToVisitedUrls(request.uri)
-                            return super.onLoadRequest(session, request)
-                        }
+                val headers: Bundle? = intent.getBundleExtra("headers")
+                val customUserAgent = headers?.getString("user-agent")
+                if (customUserAgent != null) {
+                    geckoSession.settings.userAgentOverride = customUserAgent
+                }
+
+                geckoSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
+                    override fun onLoadRequest(
+                        session: GeckoSession,
+                        request: GeckoSession.NavigationDelegate.LoadRequest
+                    ): GeckoResult<AllowOrDeny>? {
+                        currentUrl = request.uri
+                        addToVisitedUrls(request.uri)
+                        return super.onLoadRequest(session, request)
+                    }
 
                         override fun onLocationChange(
                             session: GeckoSession,
