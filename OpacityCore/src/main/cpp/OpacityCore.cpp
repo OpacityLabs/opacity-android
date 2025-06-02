@@ -198,6 +198,41 @@ extern "C" void android_close_webview() {
   env->CallVoidMethod(java_object, method);
 }
 
+extern "C" const char *android_get_browser_cookies_for_current_url() {
+  JNIEnv *env = GetJniEnv();
+
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+
+  jmethodID method = env->GetMethodID(
+      jOpacityCore, "getBrowserCookiesForCurrentUrl", "()Ljava/lang/String;");
+  auto res = (jstring)env->CallObjectMethod(java_object, method);
+
+  if (res == nullptr) {
+    return nullptr;
+  }
+
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  return val_str;
+}
+
+extern "C" const char *
+android_get_browser_cookies_for_domain(const char *domain) {
+  JNIEnv *env = GetJniEnv();
+
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method =
+      env->GetMethodID(jOpacityCore, "getBrowserCookiesForDomain",
+                       "(Ljava/lang/String;)Ljava/lang/String;");
+  jstring jdomain = env->NewStringUTF(domain);
+  auto res = (jstring)env->CallObjectMethod(java_object, method, jdomain);
+  if (res == nullptr) {
+    return nullptr;
+  }
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  //    opacity_core::free_string(domain); // Free the domain string
+  return val_str; // Caller must free this memory
+}
+
 extern "C" JNIEXPORT jint JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_init(
     JNIEnv *env, jobject thiz, jstring api_key, jboolean dry_run,
