@@ -77,7 +77,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         localBroadcastManager.registerReceiver(
             cookiesForDomainRequestReceiver,
-            IntentFilter("com.oapcitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
+            IntentFilter("com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
         )
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
