@@ -71,3 +71,9 @@ browser.webNavigation.onDOMContentLoaded.addListener(function (details) {
       });
   }
 });
+
+browser.runtime.onMessage.addListener((msg, sender) => {
+  if (msg.event === "window.close") {
+    return browser.runtime.sendNativeMessage("gecko", msg);
+  }
+});
