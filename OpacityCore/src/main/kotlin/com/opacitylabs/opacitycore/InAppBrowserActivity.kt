@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import androidx.appcompat.app.ActionBar
@@ -113,18 +112,9 @@ class InAppBrowserActivity : AppCompatActivity() {
                         ): GeckoResult<Any>? {
                             val jsonMessage = message as JSONObject
 
-                            Log.d("Opacity", "MSG: ${jsonMessage.toString(2)}")
-
+                            // This are the messages from our injected JS script to extract
+                            // cookies
                             when (jsonMessage.getString("event")) {
-                                "window.close" -> {
-                                    val event: Map<String, Any?> =
-                                        mapOf(
-                                            "event" to "window.close",
-                                            "id" to System.currentTimeMillis().toString()
-                                        )
-                                    OpacityCore.emitWebviewEvent(JSONObject(event).toString())
-                                }
-
                                 "html_body" -> {
                                     htmlBody = jsonMessage.getString("html")
                                     emitNavigationEvent()

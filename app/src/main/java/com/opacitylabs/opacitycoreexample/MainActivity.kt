@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("epic_store:profile") }
+                        val flowInput = remember { mutableStateOf("github:profile") }
 
                         TextField(
                             value = flowInput.value,
@@ -95,7 +95,7 @@ class MainActivity : ComponentActivity() {
                                         OpacityCore.initialize(
                                             opacityApiKey,
                                             false,
-                                            OpacityCore.Environment.LOCAL,
+                                            OpacityCore.Environment.PRODUCTION,
                                             true
                                         )
                                         Log.d("MainActivity", "Opacity SDK re-initialized")
@@ -127,6 +127,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.LOCAL, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
     }
 }
