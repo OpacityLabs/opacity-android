@@ -113,20 +113,16 @@ class InAppBrowserActivity : AppCompatActivity() {
                         ): GeckoResult<Any>? {
                             val jsonMessage = message as JSONObject
 
-                            Log.d("GECKO MESSAGE: ", message.toString())
+                            Log.d("Opacity", "MSG: ${jsonMessage.toString(2)}")
 
-                            // This are the messages from our injected JS script to extract
-                            // cookies
                             when (jsonMessage.getString("event")) {
                                 "window.close" -> {
-                                    Log.d("window.close ", "window.close reached!")
                                     val event: Map<String, Any?> =
                                         mapOf(
                                             "event" to "window.close",
                                             "id" to System.currentTimeMillis().toString()
                                         )
                                     OpacityCore.emitWebviewEvent(JSONObject(event).toString())
-                                    emitNavigationEvent()
                                 }
 
                                 "html_body" -> {
@@ -185,18 +181,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                             return super.onLoadRequest(session, request)
                         }
 
-                        override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
-                            Log.d("onNewSession ", "onNewSession reached")
-                            val newSession = GeckoSession().apply {
-                                settings.allowJavascript = true
-                                navigationDelegate = this@apply.navigationDelegate
-                                open(OpacityCore.getRuntime())
-                            }
-                            geckoView.setSession(newSession)
-                            newSession.loadUri(uri)
-                            return GeckoResult.fromValue(newSession)
-                        }
-
                         override fun onLocationChange(
                             session: GeckoSession,
                             url: String?,
@@ -206,8 +190,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                             hasUserGesture: Boolean
                         ) {
                             if (url != null) {
-                                currentUrl = url
                                 addToVisitedUrls(url)
+                                emitLocationEvent(url)
                             }
                         }
                     }
@@ -219,6 +203,17 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                 geckoSession.loadUri(url)
             }
+    }
+
+    private fun emitLocationEvent(url: String) {
+        val event: Map<String, Any?> =
+            mapOf(
+                "event" to "location",
+                "url" to url,
+                "id" to System.currentTimeMillis().toString()
+            )
+        OpacityCore.emitWebviewEvent(JSONObject(event).toString())
+        clearVisitedUrls()
     }
 
     private fun emitNavigationEvent() {
