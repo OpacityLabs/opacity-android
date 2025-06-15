@@ -203,7 +203,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                 "id" to System.currentTimeMillis().toString()
             )
         OpacityCore.emitWebviewEvent(JSONObject(event).toString())
-        clearVisitedUrls()
     }
 
     private fun emitNavigationEvent() {
