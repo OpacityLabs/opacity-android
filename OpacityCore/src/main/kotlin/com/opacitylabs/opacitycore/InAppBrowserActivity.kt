@@ -198,7 +198,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun emitLocationEvent(url: String) {
         val event: Map<String, Any?> =
             mapOf(
-                "event" to "location",
+                "event" to "location_changed",
                 "url" to url,
                 "id" to System.currentTimeMillis().toString()
             )
