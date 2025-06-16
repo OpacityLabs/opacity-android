@@ -180,8 +180,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                             hasUserGesture: Boolean
                         ) {
                             if (url != null) {
-                                currentUrl = url
                                 addToVisitedUrls(url)
+                                emitLocationEvent(url)
                             }
                         }
                     }
@@ -193,6 +193,16 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                 geckoSession.loadUri(url)
             }
+    }
+
+    private fun emitLocationEvent(url: String) {
+        val event: Map<String, Any?> =
+            mapOf(
+                "event" to "location_changed",
+                "url" to url,
+                "id" to System.currentTimeMillis().toString()
+            )
+        OpacityCore.emitWebviewEvent(JSONObject(event).toString())
     }
 
     private fun emitNavigationEvent() {
