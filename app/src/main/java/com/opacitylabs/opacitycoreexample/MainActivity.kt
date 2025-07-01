@@ -117,6 +117,68 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Uber Rider Profile") }
+                        
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    try {
+                                        val startTime = System.currentTimeMillis()
+                                        var completed = 0
+                                        var totalDuration = 0L
+                                        val totalRequests = 10000
+                                        val concurrentLimit = 40
+                                        val lock = Any()
+                                        var currentIndex = 0
+                                        
+                                        suspend fun launchNext(completion: () -> Unit) {
+                                            val jobs = mutableListOf<kotlinx.coroutines.Job>()
+                                            
+                                            repeat(concurrentLimit) {
+                                                val job = lifecycleScope.launch {
+                                                    while (true) {
+                                                        val i = synchronized(lock) {
+                                                            if (currentIndex >= totalRequests) return@launch
+                                                            currentIndex++
+                                                        }
+                                                        
+                                                        val reqStart = System.currentTimeMillis()
+                                                        try {
+                                                            Log.d("MainActivity", "🟠 $i")
+                                                            val res = OpacityCore.get("test:open_browser_must_succeed", null)
+                                                            val reqDuration = System.currentTimeMillis() - reqStart
+                                                            synchronized(lock) {
+                                                                totalDuration += reqDuration
+                                                                completed++
+                                                            }
+                                                            Log.d("MainActivity", "🟩 $i - took ${reqDuration / 1000.0} seconds")
+                                                        } catch (e: Exception) {
+                                                            synchronized(lock) {
+                                                                completed++
+                                                            }
+                                                            Log.e("MainActivity", "🟥 Error on task $i: ${e.message}")
+                                                        }
+                                                    }
+                                                }
+                                                jobs.add(job)
+                                            }
+                                            
+                                            jobs.forEach { it.join() }
+                                            completion()
+                                        }
+                                        
+                                        launchNext {
+                                            val avg = totalDuration.toDouble() / totalRequests / 1000.0
+                                            Log.d("MainActivity", "Average request time: $avg seconds")
+                                            // Show a simple log message since we don't have toast functionality
+                                            Log.d("MainActivity", "🟩 Average request time: ${String.format("%.3f", avg)}s")
+                                        }
+                                        Log.d("MainActivity", "🟩 Launched parallel requests (always 40 at a time)")
+                                    } catch (e: Exception) {
+                                        Log.e("MainActivity", e.toString())
+                                    }
+                                }
+                            },
+                        ) { Text(text = "Stress Test") }
                     }
                 }
             }
@@ -127,6 +189,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST, true)
     }
 }
