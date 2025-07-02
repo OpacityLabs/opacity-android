@@ -144,7 +144,7 @@ class MainActivity : ComponentActivity() {
                                                         val reqStart = System.currentTimeMillis()
                                                         try {
                                                             Log.d("MainActivity", "🟠 $i")
-                                                            val res = OpacityCore.get("test:open_browser_must_succeed", null)
+                                                            val res = OpacityCore.get("stress", null)
                                                             val reqDuration = System.currentTimeMillis() - reqStart
                                                             synchronized(lock) {
                                                                 totalDuration += reqDuration
@@ -189,6 +189,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST, false)
     }
 }
