@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.opacitylabs.opacitycore.OpacityCore
+import com.opacitylabs.opacitycore.OpacityError
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
@@ -61,13 +62,24 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get(flowInput.value, null)
-                                        Log.d("MainActivity", "🟩🟩🟩")
-                                        Log.d("MainActivity", res.toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
+                                    val res = OpacityCore.get(flowInput.value, null)
+                                    res.fold(
+                                        onSuccess = { value ->
+                                            Log.e(
+                                                "MainActivity",
+                                                "Res: ${value}value"
+                                            )
+                                        },
+                                        onFailure = {
+                                            when (it) {
+                                                is OpacityError -> Log.e(
+                                                    "MainActivity",
+                                                    "code: ${it.code}, message: ${it.message}"
+                                                )
+
+                                                else -> Log.e("MainActivity", it.toString())
+                                            }
+                                        })
                                 }
                             },
                         ) { Text(text = "Run Flow") }
@@ -108,12 +120,24 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    try {
-                                        val res = OpacityCore.get("uber_rider:profile", null)
-                                        Log.d("MainActivity", res["json"].toString())
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", e.toString())
-                                    }
+                                    val res = OpacityCore.get("uber_rider:profile", null)
+                                    res.fold(
+                                        onSuccess = { value ->
+                                            Log.e(
+                                                "MainActivity",
+                                                "Res: ${value}value"
+                                            )
+                                        },
+                                        onFailure = {
+                                            when (it) {
+                                                is OpacityError -> Log.e(
+                                                    "MainActivity",
+                                                    "code: ${it.code}, message: ${it.message}"
+                                                )
+
+                                                else -> Log.e("MainActivity", it.toString())
+                                            }
+                                        })
                                 }
                             },
                         ) { Text(text = "Uber Rider Profile") }
@@ -127,6 +151,6 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, true)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.TEST, false)
     }
 }

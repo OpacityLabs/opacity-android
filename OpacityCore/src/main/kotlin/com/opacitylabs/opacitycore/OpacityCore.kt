@@ -107,20 +107,35 @@ object OpacityCore {
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
     }
 
+    private fun parseOpacityError(error: String?): OpacityError {
+        if (error == null) {
+            return OpacityError("UnknownError", "No Message")
+        }
+        return try {
+            val json = Json.parseToJsonElement(error).jsonObject
+            val code = json["code"]?.toString()?.replace("\"", "") ?: "unknown"
+            val description = json["description"]?.toString()?.replace("\"", "") ?: "unknown"
+            OpacityError(code, description)
+        } catch (e: Exception) {
+            OpacityError("UnknownError", error)
+        }
+    }
+
     @JvmStatic
-    suspend fun get(name: String, params: Map<String, Any?>?): Map<String, Any?> {
+    suspend fun get(name: String, params: Map<String, Any?>?): Result<Map<String, Any?>> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let { Json.encodeToString(it) }
             val res = getNative(name, paramsString)
             if (res.status != 0) {
-                throw Exception(res.err)
+                return@withContext Result.failure(parseOpacityError(res.err))
             }
 
             val map: Map<String, Any?> =
                 Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
                     parseJsonElementToAny(it.value)
                 }
-            map
+
+            return@withContext Result.success(map)
         }
     }
 
