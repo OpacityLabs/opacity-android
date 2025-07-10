@@ -118,6 +118,9 @@ class InAppBrowserActivity : AppCompatActivity() {
                                 "html_body" -> {
                                     htmlBody = jsonMessage.getString("html")
                                     emitNavigationEvent()
+
+                                    // clear the html_body, needed so we stay consistent with iOS
+                                    htmlBody = ""
                                 }
 
                                 "cookies" -> {
@@ -168,6 +171,9 @@ class InAppBrowserActivity : AppCompatActivity() {
                         ): GeckoResult<AllowOrDeny>? {
                             currentUrl = request.uri
                             addToVisitedUrls(request.uri)
+
+                            emitNavigationEvent()
+
                             return super.onLoadRequest(session, request)
                         }
 
@@ -206,16 +212,26 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun emitNavigationEvent() {
-        val domain = java.net.URL(currentUrl).host
-        val event: Map<String, Any?> =
-            mapOf(
+        val event: MutableMap<String, Any?> =
+            mutableMapOf(
                 "event" to "navigation",
                 "url" to currentUrl,
-                "html_body" to htmlBody,
-                "cookies" to cookies[domain],
                 "visited_urls" to visitedUrls,
                 "id" to System.currentTimeMillis().toString()
             )
+
+        try {
+            val domain = java.net.URL(currentUrl).host
+            event["cookies"] = cookies[domain]
+        } catch(e: Exception) {
+            // If the URL is malformed (usually when it is a URI like "uberlogin://blabla")
+            // we don't set any cookies
+        }
+
+        if (htmlBody != "") {
+            event["html_body"] = htmlBody
+        }
+
         OpacityCore.emitWebviewEvent(JSONObject(event).toString())
         clearVisitedUrls()
     }
