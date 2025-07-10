@@ -168,11 +168,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                         ): GeckoResult<AllowOrDeny>? {
                             currentUrl = request.uri
                             addToVisitedUrls(request.uri)
-
-                            // we have to emit a `location_changed` event
-                            // so we can catch this event in lua
-                            // these types of events seem to be `navigation` events for iOS, though
-                            emitLocationEvent(request.uri)
+                            
+                            emitNavigationEvent()
 
                             return super.onLoadRequest(session, request)
                         }
