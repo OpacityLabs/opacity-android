@@ -46,7 +46,12 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN") {
                 val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
-                val domain = intent.getStringExtra("domain")
+                var domain = intent.getStringExtra("domain")
+                if (domain?.startsWith(".") == true) {
+                    // If the domain starts with a dot, we have to remove it as per rfc 6265
+                    //  https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.3
+                    domain = domain.substring(1)
+                }
                 val browserCookies = cookies[domain] ?: JSONObject()
                 receiver?.onReceiveResult(browserCookies)
             }
