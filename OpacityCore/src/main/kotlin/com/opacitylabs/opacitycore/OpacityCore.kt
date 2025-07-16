@@ -83,23 +83,24 @@ object OpacityCore {
         appContext.startActivity(intent)
     }
 
-    fun getBrowserCookiesForCurrentUrl(): String {
+    fun getBrowserCookiesForCurrentUrl(): String? {
         val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL")
         val resultReceiver = CookieResultReceiver()
         cookiesIntent.putExtra("receiver", resultReceiver)
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
         val json = resultReceiver.waitForResult(1000) // Wait up to 1 second for the result
-        return json.toString()
+        return json?.toString()
     }
 
-    fun getBrowserCookiesForDomain(domain: String): String {
+
+    fun getBrowserCookiesForDomain(domain: String): String? {
         val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
         val resultsReceiver = CookieResultReceiver()
         cookiesIntent.putExtra("receiver", resultsReceiver)
         cookiesIntent.putExtra("domain", domain)
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
         val json = resultsReceiver.waitForResult(1000)
-        return json.toString()
+        return json?.toString()
     }
 
     fun closeBrowser() {
