@@ -35,14 +35,9 @@ class InAppBrowserActivity : AppCompatActivity() {
                 if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL"
                 ) {
                     val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
-                    if (geckoSession == null) {
-                        // browser is not open
-                        receiver?.onReceiveResult(null)
-                    } else {
-                        val domain = java.net.URL(currentUrl).host
-                        val browserCookies = cookies[domain] ?: JSONObject()
-                        receiver?.onReceiveResult(browserCookies)
-                    }
+                    val domain = java.net.URL(currentUrl).host
+                    val browserCookies = cookies[domain] ?: JSONObject()
+                    receiver?.onReceiveResult(browserCookies)
                 }
             }
         }
@@ -51,19 +46,14 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN") {
                 val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
-                if (geckoSession == null) {
-                    // browser is not open
-                    receiver?.onReceiveResult(null)
-                } else {
-                    var domain = intent.getStringExtra("domain")
-                    if (domain?.startsWith(".") == true) {
-                        // If the domain starts with a dot, we have to remove it as per rfc 6265
-                        //  https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.3
-                        domain = domain.substring(1)
-                    }
-                    val browserCookies = cookies[domain] ?: JSONObject()
-                    receiver?.onReceiveResult(browserCookies)
+                var domain = intent.getStringExtra("domain")
+                if (domain?.startsWith(".") == true) {
+                    // If the domain starts with a dot, we have to remove it as per rfc 6265
+                    //  https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.3
+                    domain = domain.substring(1)
                 }
+                val browserCookies = cookies[domain] ?: JSONObject()
+                receiver?.onReceiveResult(browserCookies)
             }
         }
     }
@@ -238,7 +228,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         try {
             val domain = java.net.URL(currentUrl).host
             event["cookies"] = cookies[domain]
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             // If the URL is malformed (usually when it is a URI like "uberlogin://blabla")
             // we don't set any cookies
         }
