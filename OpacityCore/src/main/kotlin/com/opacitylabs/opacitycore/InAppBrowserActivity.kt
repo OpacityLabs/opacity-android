@@ -266,5 +266,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this)
             .unregisterReceiver(cookiesForCurrentURLRequestReceiver)
         geckoSession.close()
+        OpacityCore.onBrowserDestroyed()
     }
 }
