@@ -26,6 +26,7 @@ object OpacityCore {
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
     private lateinit var sRuntime: GeckoRuntime
+    private var isBrowserActive = false
 
     init {
         System.loadLibrary("OpacityCore")
@@ -73,38 +74,47 @@ object OpacityCore {
     }
 
     fun presentBrowser() {
-        val intent = Intent()
-        intent.setClassName(
-            appContext.packageName,
-            "com.opacitylabs.opacitycore.InAppBrowserActivity"
-        )
+        val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         appContext.startActivity(intent)
+        isBrowserActive = true
     }
 
-    fun getBrowserCookiesForCurrentUrl(): String {
+    fun getBrowserCookiesForCurrentUrl(): String? {
+        if (!isBrowserActive) {
+            return null
+        }
+
         val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL")
         val resultReceiver = CookieResultReceiver()
         cookiesIntent.putExtra("receiver", resultReceiver)
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
         val json = resultReceiver.waitForResult(1000) // Wait up to 1 second for the result
-        return json.toString()
+        return json?.toString()
     }
 
-    fun getBrowserCookiesForDomain(domain: String): String {
+    fun getBrowserCookiesForDomain(domain: String): String? {
+        if (!isBrowserActive) {
+            return null
+        }
+
         val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
         val resultsReceiver = CookieResultReceiver()
         cookiesIntent.putExtra("receiver", resultsReceiver)
         cookiesIntent.putExtra("domain", domain)
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
         val json = resultsReceiver.waitForResult(1000)
-        return json.toString()
+        return json?.toString()
     }
 
     fun closeBrowser() {
         val closeIntent = Intent("com.opacitylabs.opacitycore.CLOSE_BROWSER")
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
+    }
+
+    fun onBrowserDestroyed() {
+        isBrowserActive = false
     }
 
     private fun parseOpacityError(error: String?): OpacityError {

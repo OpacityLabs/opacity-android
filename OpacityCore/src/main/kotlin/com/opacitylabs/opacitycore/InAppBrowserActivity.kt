@@ -228,7 +228,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         try {
             val domain = java.net.URL(currentUrl).host
             event["cookies"] = cookies[domain]
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             // If the URL is malformed (usually when it is a URI like "uberlogin://blabla")
             // we don't set any cookies
         }
@@ -266,5 +266,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this)
             .unregisterReceiver(cookiesForCurrentURLRequestReceiver)
         geckoSession.close()
+        OpacityCore.onBrowserDestroyed()
     }
 }
