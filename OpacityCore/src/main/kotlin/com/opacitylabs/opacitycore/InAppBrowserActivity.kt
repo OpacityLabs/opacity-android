@@ -7,9 +7,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.view.Gravity
+import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.json.JSONObject
 import org.mozilla.geckoview.AllowOrDeny
@@ -69,6 +73,17 @@ class InAppBrowserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Handle edge-to-edge display for Android 15+
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+        // Enable edge-to-edge
+        ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, insets.top, 0, insets.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
+
         val localBroadcastManager = LocalBroadcastManager.getInstance(this)
         localBroadcastManager.registerReceiver(
             closeReceiver,
@@ -95,13 +110,13 @@ class InAppBrowserActivity : AppCompatActivity() {
                 setOnClickListener { onClose() }
             }
 
-        val layoutParams =
+        val actionBarLayoutParams =
             ActionBar.LayoutParams(
                 ActionBar.LayoutParams.WRAP_CONTENT,
                 ActionBar.LayoutParams.WRAP_CONTENT,
                 Gravity.END or Gravity.CENTER_VERTICAL
             )
-        supportActionBar?.setCustomView(closeButton, layoutParams)
+        supportActionBar?.setCustomView(closeButton, actionBarLayoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
         OpacityCore.getRuntime()
@@ -199,7 +214,44 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                 geckoView = GeckoView(this).apply { setSession(geckoSession) }
 
-                setContentView(geckoView)
+                // Create a container layout to properly handle the action bar spacing
+                val container = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+
+                    // Handle window insets for the container
+                    ViewCompat.setOnApplyWindowInsetsListener(this) { view, windowInsets ->
+                        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                        view.setPadding(0, insets.top, 0, insets.bottom)
+                        windowInsets
+                    }
+                }
+
+                // Configure GeckoView layout params to account for action bar
+                val geckoLayoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                ).apply {
+                    // Add top margin to account for action bar height
+                    val actionBarHeight = supportActionBar?.height ?: 0
+                    if (actionBarHeight == 0) {
+                        // Fallback to standard action bar height
+                        val typedArray =
+                            theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
+                        topMargin = typedArray.getDimensionPixelSize(0, 0)
+                        typedArray.recycle()
+                    } else {
+                        topMargin = actionBarHeight
+                    }
+                }
+
+                geckoView.layoutParams = geckoLayoutParams
+                container.addView(geckoView)
+
+                setContentView(container)
                 val url = intent.getStringExtra("url")!!
 
                 geckoSession.loadUri(url)
