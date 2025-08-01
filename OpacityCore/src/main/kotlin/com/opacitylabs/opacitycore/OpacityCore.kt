@@ -149,6 +149,23 @@ object OpacityCore {
         }
     }
 
+    @JvmStatic
+    suspend fun getRaw(name: String, params: String?): Result<Map<String, Any?>> {
+        return withContext(Dispatchers.IO) {
+            val res = getNative(name, params)
+            if (res.status != 0) {
+                return@withContext Result.failure(parseOpacityError(res.err))
+            }
+
+            val map: Map<String, Any?> =
+                Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
+                    parseJsonElementToAny(it.value)
+                }
+
+            return@withContext Result.success(map)
+        }
+    }
+
     private external fun init(
         apiKey: String,
         dryRun: Boolean,
