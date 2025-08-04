@@ -17,11 +17,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.opacitylabs.opacitycore.JsonConverter
 import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycore.OpacityError
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -53,7 +54,8 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
                         val flowInput = remember { mutableStateOf("instagram:comments") }
-                        val paramsInput = remember { mutableStateOf("{\"previous_response\":\"\"}") }
+                        val paramsInput =
+                            remember { mutableStateOf("{\"previous_response\":\"\"}") }
 
                         TextField(
                             value = flowInput.value,
@@ -70,52 +72,36 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    // we have to check for the params string to be either empty (which we cast to null)
-                                    // either a valid JSON
-                                    // if it's not a valid JSON, we have to notify the user and early return
-                                    val paramsResult: Result<String?> = try {
-                                        if (paramsInput.value.isBlank()) {
-                                            Result.success(null)
-                                        } else {
-                                            // try to serialize, this throws a SerializationException if the JSON is invalid
-                                            kotlinx.serialization.json.Json.parseToJsonElement(
-                                                paramsInput.value
-                                            )
-                                            Result.success(paramsInput.value)
-                                        }
-                                    } catch(e: SerializationException) {
-                                        Log.e(
-                                            "MainActivity",
-                                            "Invalid JSON in paramsInput: ${e.message}"
-                                        )
-                                        Result.failure(e)
+                                    var params: Map<String, Any>? = null
+
+                                    if (!paramsInput.value.isBlank()) {
+                                        params =
+                                            JsonConverter.parseJsonElementToAny(
+                                                Json.parseToJsonElement(
+                                                    paramsInput.value
+                                                )
+                                            ) as Map<String, Any>?
                                     }
 
-                                    paramsResult.fold(
-                                        onSuccess = { params ->
-                                            val res = OpacityCore.getRaw(flowInput.value, params)
-                                            res.fold(
-                                                onSuccess = { value ->
-                                                    Log.e(
-                                                        "MainActivity",
-                                                        "Res: ${value}value"
-                                                    )
-                                                },
-                                                onFailure = {
-                                                    when (it) {
-                                                        is OpacityError -> Log.e(
-                                                            "MainActivity",
-                                                            "code: ${it.code}, message: ${it.message}"
-                                                        )
-
-                                                        else -> Log.e("MainActivity", it.toString())
-                                                    }
-                                                })
+                                    val res = OpacityCore.get(flowInput.value, params)
+                                    res.fold(
+                                        onSuccess = { value ->
+                                            Log.e(
+                                                "MainActivity",
+                                                "Res: ${value}value"
+                                            )
                                         },
                                         onFailure = {
-                                            Log.e("MainActivity", "Invalid JSON in paramsInput")
-                                        }
-                                    )
+                                            when (it) {
+                                                is OpacityError -> Log.e(
+                                                    "MainActivity",
+                                                    "code: ${it.code}, message: ${it.message}"
+                                                )
+
+                                                else -> Log.e("MainActivity", it.toString())
+                                            }
+                                        })
+
                                 }
                             },
                         ) { Text(text = "Run Flow") }

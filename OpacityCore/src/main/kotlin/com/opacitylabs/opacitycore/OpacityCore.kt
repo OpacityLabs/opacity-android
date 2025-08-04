@@ -4,7 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.opacitylabs.opacitycore.JsonToAnyConverter.Companion.parseJsonElementToAny
+import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
+import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -134,7 +135,11 @@ object OpacityCore {
     @JvmStatic
     suspend fun get(name: String, params: Map<String, Any?>?): Result<Map<String, Any?>> {
         return withContext(Dispatchers.IO) {
-            val paramsString = params?.let { Json.encodeToString(it) }
+            val paramsString = params?.let {
+                val jsonElement = mapToJsonElement(it)
+                Json.encodeToString(jsonElement)
+            }
+
             val res = getNative(name, paramsString)
             if (res.status != 0) {
                 return@withContext Result.failure(parseOpacityError(res.err))
