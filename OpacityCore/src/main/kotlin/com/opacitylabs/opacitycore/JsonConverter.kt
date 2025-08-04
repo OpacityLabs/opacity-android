@@ -12,9 +12,26 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 
-class JsonToAnyConverter {
-
+class JsonConverter {
     companion object {
+        fun mapToJsonElement(map: Map<String, Any?>): JsonElement {
+            fun toJsonElement(value: Any?): JsonElement = when (value) {
+                null -> JsonNull
+                is Boolean -> JsonPrimitive(value)
+                is Number -> JsonPrimitive(value)
+                is String -> JsonPrimitive(value)
+                is Map<*, *> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    JsonObject((value as Map<String, Any?>).mapValues { toJsonElement(it.value) })
+                }
+
+                is List<*> -> JsonArray(value.map { toJsonElement(it) })
+                else -> throw IllegalArgumentException("Unsupported type: ${value::class}")
+            }
+
+            return JsonObject(map.mapValues { toJsonElement(it.value) })
+        }
+        
         fun parseJsonElementToAny(jsonElement: JsonElement): Any? {
             return when (jsonElement) {
                 is JsonObject -> {

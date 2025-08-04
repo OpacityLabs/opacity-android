@@ -17,10 +17,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.opacitylabs.opacitycore.JsonConverter
 import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycore.OpacityError
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -51,7 +53,9 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("github:profile") }
+                        val flowInput = remember { mutableStateOf("instagram:comments") }
+                        val paramsInput =
+                            remember { mutableStateOf("{\"previous_response\":\"\"}") }
 
                         TextField(
                             value = flowInput.value,
@@ -59,10 +63,27 @@ class MainActivity : ComponentActivity() {
                             label = { Text("Enter flow") }
                         )
 
+                        TextField(
+                            value = paramsInput.value,
+                            onValueChange = { paramsInput.value = it },
+                            label = { Text("Enter JSON parameters (optional)") }
+                        )
+
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    val res = OpacityCore.get(flowInput.value, null)
+                                    var params: Map<String, Any>? = null
+
+                                    if (!paramsInput.value.isBlank()) {
+                                        params =
+                                            JsonConverter.parseJsonElementToAny(
+                                                Json.parseToJsonElement(
+                                                    paramsInput.value
+                                                )
+                                            ) as Map<String, Any>?
+                                    }
+
+                                    val res = OpacityCore.get(flowInput.value, params)
                                     res.fold(
                                         onSuccess = { value ->
                                             Log.e(
@@ -80,6 +101,7 @@ class MainActivity : ComponentActivity() {
                                                 else -> Log.e("MainActivity", it.toString())
                                             }
                                         })
+
                                 }
                             },
                         ) { Text(text = "Run Flow") }
