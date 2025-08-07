@@ -27,6 +27,16 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        init {
+            System.loadLibrary("DemoCpp")
+        }
+
+        @JvmStatic
+        external fun setEnv()
+    }
+
     private fun loadEnvFile(context: Context): Map<String, String> {
         val envMap = mutableMapOf<String, String>()
         val inputStream = context.assets.open("env")
@@ -45,6 +55,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+//        setEnv()
         enableEdgeToEdge()
         setContent {
             OpacityCoreExampleTheme {
