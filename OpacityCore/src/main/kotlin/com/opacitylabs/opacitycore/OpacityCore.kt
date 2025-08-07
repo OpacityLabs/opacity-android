@@ -20,6 +20,7 @@ object OpacityCore {
         SANDBOX,
         STAGING,
         PRODUCTION,
+        LOCAL_PROXY,
     }
 
     private lateinit var appContext: Context

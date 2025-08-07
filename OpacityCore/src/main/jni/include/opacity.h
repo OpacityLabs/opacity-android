@@ -36,6 +36,8 @@ extern const int32_t OPACITY_ENVIRONMENT_STAGING;
 
 extern const int32_t OPACITY_ENVIRONMENT_PRODUCTION;
 
+extern const int32_t OPACITY_ENVIRONMENT_LOCAL_PROXY;
+
 int32_t init(const char *api_key_str,
              bool dry_run,
              int32_t backend_environment,
