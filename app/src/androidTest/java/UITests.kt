@@ -46,4 +46,21 @@ class UITests {
             )
         )
     }
+
+    @Test
+    fun testSuccessFlowButton() {
+        // Check if button is displayed
+        composeTestRule.onNodeWithText("Test flow always succeeds").assertIsDisplayed()
+
+        // Perform click
+        composeTestRule.onNodeWithText("Test flow always succeeds").performClick()
+
+        // Wait for the async operation to complete
+        Thread.sleep(3000)
+
+        // Check that the success dialog is displayed
+        composeTestRule.onNodeWithText("Success").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Test flow completed successfully!").assertIsDisplayed()
+        composeTestRule.onNodeWithText("OK").assertIsDisplayed()
+    }
 }

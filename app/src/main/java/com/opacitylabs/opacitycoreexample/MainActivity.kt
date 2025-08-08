@@ -9,12 +9,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.opacitylabs.opacitycore.JsonConverter
@@ -59,6 +63,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OpacityCoreExampleTheme {
+                var showSuccessDialog by remember { mutableStateOf(false) }
+
+                // Success dialog
+                if (showSuccessDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showSuccessDialog = false },
+                        title = { Text("Success") },
+                        text = { Text("Test flow completed successfully!") },
+                        confirmButton = {
+                            TextButton(onClick = { showSuccessDialog = false }) {
+                                Text("OK")
+                            }
+                        }
+                    )
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = androidx.compose.ui.graphics.Color.Black
@@ -174,6 +194,32 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                         ) { Text(text = "Uber Rider Profile") }
+                        Button(
+                            onClick = {
+                                lifecycleScope.launch {
+                                    val res =
+                                        OpacityCore.get("test:open_browser_must_succeed", null)
+                                    res.fold(
+                                        onSuccess = { value ->
+                                            Log.e(
+                                                "MainActivity",
+                                                "Res: ${value}value"
+                                            )
+                                            showSuccessDialog = true
+                                        },
+                                        onFailure = {
+                                            when (it) {
+                                                is OpacityError -> Log.e(
+                                                    "MainActivity",
+                                                    "code: ${it.code}, message: ${it.message}"
+                                                )
+
+                                                else -> Log.e("MainActivity", it.toString())
+                                            }
+                                        })
+                                }
+                            },
+                        ) { Text(text = "Test flow always succeeds") }
                     }
                 }
             }

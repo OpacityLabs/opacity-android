@@ -46,7 +46,10 @@ object OpacityCore {
     @JvmStatic
     fun setContext(context: Context) {
         appContext = context
-        sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        // Only create GeckoRuntime if it hasn't been created yet
+        if (!::sRuntime.isInitialized) {
+            sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        }
         cryptoManager = CryptoManager(appContext.applicationContext)
     }
 
