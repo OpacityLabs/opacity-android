@@ -14,12 +14,11 @@ import kotlinx.serialization.json.jsonObject
 import org.mozilla.geckoview.GeckoRuntime
 
 object OpacityCore {
-    enum class Environment {
-        TEST,
-        LOCAL,
-        SANDBOX,
-        STAGING,
-        PRODUCTION,
+    enum class Environment(val code: Int) {
+        LOCAL(1),
+        SANDBOX(2),
+        STAGING(3),
+        PRODUCTION(4),
     }
 
     private lateinit var appContext: Context
@@ -40,7 +39,7 @@ object OpacityCore {
         environment: Environment,
         showErrorsInWebView: Boolean
     ): Int {
-        return init(apiKey, dryRun, environment.ordinal, showErrorsInWebView)
+        return init(apiKey, dryRun, environment.code, showErrorsInWebView)
     }
 
     @JvmStatic
