@@ -1,13 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.opacitylabs.opacitycoreexample"
     compileSdk = 35
-    // ndkVersion = 26.3.11579264
 
     defaultConfig {
         applicationId = "com.opacitylabs.opacitycoreexample"
@@ -28,7 +26,7 @@ android {
             resources.srcDir("src/main/resources")
         }
     }
-
+    
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -40,14 +38,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlin {
-        jvmToolchain(17) // or your version
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
     buildFeatures {
         compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
