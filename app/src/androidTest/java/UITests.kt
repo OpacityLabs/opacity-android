@@ -4,7 +4,10 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.espresso.intent.Intents.intended
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.hamcrest.Matchers.allOf
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
