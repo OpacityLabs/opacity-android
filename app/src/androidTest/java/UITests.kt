@@ -1,10 +1,14 @@
 package com.opacitylabs.opacitycoreexample
 
+import android.app.Activity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -56,12 +60,20 @@ class UITests {
                 .isNotEmpty()
         }
 
-        Thread.sleep(3000)
+        Thread.sleep(4000)
 
         // Perform click
         composeTestRule.onNodeWithText("Test flow always succeeds").performClick()
 
-        // Wait for the success dialog to appear
+        // Wait for InAppBrowserActivity to be dismissed
+        waitForActivityToFinish(
+            com.opacitylabs.opacitycore.InAppBrowserActivity::class.java,
+            timeoutMillis = 20000
+        )
+
+        Thread.sleep(2000)
+
+        // Now check for the dialog
         composeTestRule.waitUntil(timeoutMillis = 20_000) {
             composeTestRule.onAllNodesWithText("Success").fetchSemanticsNodes().isNotEmpty() &&
                     composeTestRule.onAllNodesWithText("Test flow completed successfully!")
@@ -69,4 +81,22 @@ class UITests {
                     composeTestRule.onAllNodesWithText("OK").fetchSemanticsNodes().isNotEmpty()
         }
     }
+}
+
+fun waitForActivityToFinish(activityClass: Class<out Activity>, timeoutMillis: Long = 10000) {
+    val start = System.currentTimeMillis()
+    while (System.currentTimeMillis() - start < timeoutMillis) {
+        val activities = mutableListOf<Activity>()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            activities.addAll(
+                ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED)
+            )
+        }
+        if (activities.none { it.javaClass == activityClass }) {
+            return
+        }
+        Thread.sleep(100)
+    }
+    throw AssertionError("${activityClass.simpleName} did not finish in time")
 }

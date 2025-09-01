@@ -61,6 +61,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setEnv()
         enableEdgeToEdge()
+
+        val dotenv = loadEnvFile(this)
+        val opacityApiKey = dotenv["OPACITY_API_KEY"]
+        requireNotNull(opacityApiKey) { "Opacity API key is null" }
+
+        OpacityCore.setContext(this)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+
+        Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
+
         setContent {
             OpacityCoreExampleTheme {
                 var showSuccessDialog by remember { mutableStateOf(false) }
@@ -225,13 +235,5 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val dotenv = loadEnvFile(this)
-        val opacityApiKey = dotenv["OPACITY_API_KEY"]
-        requireNotNull(opacityApiKey) { "Opacity API key is null" }
-
-        OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
-
-        Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
     }
 }
