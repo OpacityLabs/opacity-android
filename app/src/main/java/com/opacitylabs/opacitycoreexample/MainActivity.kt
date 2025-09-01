@@ -231,5 +231,7 @@ class MainActivity : ComponentActivity() {
 
         OpacityCore.setContext(this)
         OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+
+        Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
     }
 }
