@@ -31,6 +31,7 @@ class UITests {
 
     @Test
     fun testButtonClick() {
+        Thread.sleep(2000)
         // Check if button is displayed
         composeTestRule.waitUntil(timeoutMillis = 5000) {
             composeTestRule.onAllNodesWithText("Uber Rider Profile").fetchSemanticsNodes()
@@ -52,6 +53,7 @@ class UITests {
 
     @Test
     fun testSuccessFlowButton() {
+        Thread.sleep(2000)
         // Check if button is displayed
         composeTestRule.waitUntil(timeoutMillis = 5000) {
             composeTestRule.onAllNodesWithText("Test flow always succeeds").fetchSemanticsNodes()
