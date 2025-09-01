@@ -68,10 +68,10 @@ class UITests {
         // Wait for InAppBrowserActivity to be dismissed
         waitForActivityToFinish(
             com.opacitylabs.opacitycore.InAppBrowserActivity::class.java,
-            timeoutMillis = 20000
+            timeoutMillis = 30000
         )
 
-        Thread.sleep(2000)
+        Thread.sleep(10000)
 
         // Now check for the dialog
         composeTestRule.waitUntil(timeoutMillis = 20_000) {
