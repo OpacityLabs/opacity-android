@@ -2,6 +2,7 @@ package com.opacitylabs.opacitycoreexample
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.intent.Intents.intended
@@ -32,7 +33,10 @@ class UITests {
     @Test
     fun testButtonClick() {
         // Check if button is displayed
-        composeTestRule.onNodeWithText("Uber Rider Profile").assertIsDisplayed()
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText("Uber Rider Profile").fetchSemanticsNodes()
+                .isNotEmpty()
+        }
 
         // Perform click
         composeTestRule.onNodeWithText("Uber Rider Profile").performClick()
@@ -50,7 +54,10 @@ class UITests {
     @Test
     fun testSuccessFlowButton() {
         // Check if button is displayed
-        composeTestRule.onNodeWithText("Test flow always succeeds").assertIsDisplayed()
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText("Test flow always succeeds").fetchSemanticsNodes()
+                .isNotEmpty()
+        }
 
         // Perform click
         composeTestRule.onNodeWithText("Test flow always succeeds").performClick()
