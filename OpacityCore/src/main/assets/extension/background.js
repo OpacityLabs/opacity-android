@@ -1,8 +1,8 @@
 browser.webRequest.onHeadersReceived.addListener(
   function (details) {
     let url = details.url;
-
-    let domain = new URL(url).hostname;
+    let request_domain = new URL(url).hostname;
+    let cookie_domain;
 
     let cookiesHeaders = details.responseHeaders.filter(
       (header) => header.name.toLowerCase() === "set-cookie"
@@ -24,17 +24,34 @@ browser.webRequest.onHeadersReceived.addListener(
     // Parse cookies
     let cookieDict = {};
     cookies.split("\n").forEach((cookie) => {
-      let cookieParts = cookie.split(";")[0].split("=");
-      let cookieName = cookieParts[0].trim();
-      let cookieValue = cookieParts[1].trim();
-      cookieDict[cookieName] = cookieValue;
+      let parts = cookie.split(";").map(p => p.trim());
+
+      let [name, value] = parts[0].split("=");
+
+      cookieDict[name] = value;
+
+      parts.slice(1).forEach(attr => {
+        let [key, val] = attr.split("=");
+        if (key.toLowerCase() === "domain") {
+          /** RFC 6265
+           * If the first character of the attribute-value string is %x2E ("."):
+            Let cookie-domain be the attribute-value without the leading %x2E
+            (".") character.
+           */
+          if (val.startsWith(".")) {
+            val = val.substring(1);
+          }
+          cookie_domain = val;
+        }
+      });
     });
+
 
     // Send cookies back to the app (GeckoView) via messaging
     browser.runtime.sendNativeMessage("gecko", {
       event: "cookies",
       cookies: cookieDict,
-      domain: domain,
+      domain: cookie_domain || request_domain,
     });
   },
   { urls: ["<all_urls>"] }, // Intercept all URLs
