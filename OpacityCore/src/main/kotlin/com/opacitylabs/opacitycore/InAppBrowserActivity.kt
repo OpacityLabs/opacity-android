@@ -20,6 +20,7 @@ import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.ContentDelegate
+import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
 
@@ -40,8 +41,18 @@ class InAppBrowserActivity : AppCompatActivity() {
                 ) {
                     val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
                     val domain = java.net.URL(currentUrl).host
-                    val browserCookies = cookies[domain] ?: JSONObject()
-                    receiver?.onReceiveResult(browserCookies)
+                    val matchedCookies = JSONObject()
+                    for ((cookieDomain, cookieObject) in cookies) {
+                        val cleanDomain = cookieDomain.trimStart('.')
+                        if (domain == cleanDomain || domain.endsWith(".$cleanDomain")) {
+                            val keys = cookieObject.keys()
+                            while (keys.hasNext()) {
+                                val key = keys.next()
+                                matchedCookies.put(key, cookieObject.get(key))
+                            }
+                        }
+                    }
+                    receiver?.onReceiveResult(matchedCookies)
                 }
             }
         }
@@ -151,8 +162,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                                     cookies[domain] =
                                         cookies[domain]?.let { existingCookies ->
                                             JsonUtils.mergeJsonObjects(
-                                                receivedCookies,
-                                                existingCookies
+                                                existingCookies,
+                                                receivedCookies
                                             )
                                         }
                                             ?: receivedCookies
@@ -169,8 +180,15 @@ class InAppBrowserActivity : AppCompatActivity() {
                     "gecko"
                 )
 
+                val settings = GeckoSessionSettings.Builder()
+                    .usePrivateMode(true)
+                    .useTrackingProtection(true)
+                    .allowJavascript(true)
+                    .build()
+
+
                 geckoSession =
-                    GeckoSession().apply {
+                    GeckoSession(settings).apply {
                         setContentDelegate(object : ContentDelegate {})
                         open(OpacityCore.getRuntime())
                     }
