@@ -24,11 +24,6 @@ browser.webRequest.onHeadersReceived.addListener(
     // Parse cookies
     let cookieDict = {};
     cookies.split("\n").forEach((cookie) => {
-      console.log("Cookie: " + cookie);
-          browser.runtime.sendNativeMessage("gecko", {
-      event: "test",
-      domain: cookie,
-    });
       let parts = cookie.split(";").map(p => p.trim());
 
       let [name, value] = parts[0].split("=");
