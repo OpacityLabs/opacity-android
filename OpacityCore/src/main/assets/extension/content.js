@@ -1,6 +1,4 @@
-const COOKIE_POLL_INTERVAL_MS = 500;
-
-let cookiePollIntervalId = null;
+const COOKIE_POLL_INTERVAL_MS = 1000;
 let lastCookieState = document.cookie;
 
 const originalCookie = Object.getOwnPropertyDescriptor(
@@ -53,7 +51,7 @@ const cookieSetter = (value) => {
   return result;
 };
 
-// apply our new descriptor with the new setter
+// apply descriptor with the new setter
 Object.defineProperty(Document.prototype, "cookie", {
   configurable: originalCookie.configurable,
   enumerable: originalCookie.enumerable,
@@ -63,10 +61,9 @@ Object.defineProperty(Document.prototype, "cookie", {
 
 // poll changes to document.cookies
 const pollForCookies = () => {
-  cookiePollIntervalId = setTimeout(() => {
+  setTimeout(() => {
     try {
       const currentCookieState = document.cookie;
-
       if (currentCookieState === lastCookieState) {
         pollForCookies();
         return;
