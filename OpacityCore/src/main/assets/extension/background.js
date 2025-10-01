@@ -1,3 +1,5 @@
+const cookieStore = {};
+
 browser.webRequest.onHeadersReceived.addListener(
   function (details) {
     let url = details.url;
@@ -21,7 +23,6 @@ browser.webRequest.onHeadersReceived.addListener(
     // cookies is a single string, e.g. "sampleCookie=sampleValue; Path=\/\nsampleCookie2=sampleValue2; Path=\/"
     // We need to split and parse it to a single dictionary
 
-    // Parse cookies
     let cookieDict = {};
     cookies.split("\n").forEach((cookie) => {
       let parts = cookie.split(";").map((p) => p.trim());
@@ -51,16 +52,66 @@ browser.webRequest.onHeadersReceived.addListener(
       });
     });
 
+    const domain = cookie_domain || request_domain;
+    if (!cookieStore[domain]) {
+      cookieStore[domain] = { cookies: {} };
+    }
+
+    Object.keys(cookieDict).forEach((name) => {
+      cookieStore[domain].cookies[name] = cookieDict[name];
+    });
+
     // Send cookies back to the app (GeckoView) via messaging
     browser.runtime.sendNativeMessage("gecko", {
       event: "cookies",
-      cookies: cookieDict,
-      domain: cookie_domain || request_domain,
+      cookies: cookieStore[domain].cookies,
+      domain: domain,
     });
   },
   { urls: ["<all_urls>"] }, // Intercept all URLs
   ["responseHeaders"]
 );
+
+// Handle messages from content script for document.cookies
+browser.runtime.onMessage.addListener(function (message, sender, _) {
+  if (message.type === "cookie_operation") {
+    try {
+      const domain = message.domain || new URL(sender.tab.url).hostname;
+
+      if (!domain) {
+        browser.runtime.sendNativeMessage("gecko", {
+          event: "cookies",
+          cookies: message.cookies,
+          domain: message.domain,
+        });
+
+        return;
+      }
+
+      if (!cookieStore[domain]) {
+        cookieStore[domain] = { cookies: {} };
+      }
+
+      Object.keys(message.cookies || {}).forEach((name) => {
+        const value = message.cookies[name];
+
+        cookieStore[domain].cookies[name] = value;
+      });
+
+      browser.runtime.sendNativeMessage("gecko", {
+        event: "cookies",
+        cookies: cookieStore[domain].cookies,
+        domain: domain,
+      });
+    } catch (err) {
+      browser.runtime.sendNativeMessage("gecko", {
+        event: "cookies",
+        cookies: message.cookies,
+        domain: message.domain,
+      });
+    }
+  }
+});
 
 browser.webNavigation.onDOMContentLoaded.addListener(function (details) {
   if (details.frameId === 0) {
