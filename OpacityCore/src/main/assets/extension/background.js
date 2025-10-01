@@ -24,14 +24,19 @@ browser.webRequest.onHeadersReceived.addListener(
     // Parse cookies
     let cookieDict = {};
     cookies.split("\n").forEach((cookie) => {
-      let parts = cookie.split(";").map(p => p.trim());
+      let parts = cookie.split(";").map((p) => p.trim());
 
-      let [name, value] = parts[0].split("=");
+      let first = parts[0];
+      let eqIndex = first.indexOf("=");
+      if (eqIndex !== -1) {
+        let name = first.slice(0, eqIndex);
+        let value = first.slice(eqIndex + 1);
+        cookieDict[name] = value;
+      }
 
-      cookieDict[name] = value;
-
-      parts.slice(1).forEach(attr => {
-        let [key, val] = attr.split("=");
+      parts.slice(1).forEach((attr) => {
+        let [key, ...rest] = attr.split("=");
+        let val = rest.join("=") || true;
         if (key.toLowerCase() === "domain") {
           /** RFC 6265
            * If the first character of the attribute-value string is %x2E ("."):
@@ -45,7 +50,6 @@ browser.webRequest.onHeadersReceived.addListener(
         }
       });
     });
-
 
     // Send cookies back to the app (GeckoView) via messaging
     browser.runtime.sendNativeMessage("gecko", {
