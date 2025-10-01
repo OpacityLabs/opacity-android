@@ -23,17 +23,21 @@ browser.webRequest.onHeadersReceived.addListener(
     // cookies is a single string, e.g. "sampleCookie=sampleValue; Path=\/\nsampleCookie2=sampleValue2; Path=\/"
     // We need to split and parse it to a single dictionary
 
-    // Parse cookies
     let cookieDict = {};
     cookies.split("\n").forEach((cookie) => {
       let parts = cookie.split(";").map((p) => p.trim());
 
-      let [name, value] = parts[0].split("=");
-
-      cookieDict[name] = value;
+      let first = parts[0];
+      let eqIndex = first.indexOf("=");
+      if (eqIndex !== -1) {
+        let name = first.slice(0, eqIndex);
+        let value = first.slice(eqIndex + 1);
+        cookieDict[name] = value;
+      }
 
       parts.slice(1).forEach((attr) => {
-        let [key, val] = attr.split("=");
+        let [key, ...rest] = attr.split("=");
+        let val = rest.join("=") || true;
         if (key.toLowerCase() === "domain") {
           /** RFC 6265
            * If the first character of the attribute-value string is %x2E ("."):
