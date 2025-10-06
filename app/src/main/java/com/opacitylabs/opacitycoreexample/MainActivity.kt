@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.STAGING, false)
 
         Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
 
@@ -104,12 +104,11 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     val flowInput = remember { mutableStateOf("github:profile") }
+                    val paramsInput = remember { mutableStateOf("{\"previous_response\":\"\"}") }
                     val logOutput = remember { mutableStateOf("") }
                     val isStressTestRunning = remember { mutableStateOf(false) }
                     val logLines = logOutput.value.lines()
                     val listState = rememberLazyListState()
-                    Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("github:profile") }
 
                     // Auto-scroll to bottom when logs update
                     LaunchedEffect(logLines.size, isStressTestRunning.value) {
@@ -265,7 +264,7 @@ class MainActivity : ComponentActivity() {
                                             val startTime = System.currentTimeMillis()
                                             var completed = 0
                                             var totalDuration = 0L
-                                            val totalRequests = 10000
+                                            val totalRequests = 1000
                                             val concurrentLimit = 40
                                             val lock = Any()
                                             var currentIndex = 0
@@ -285,7 +284,7 @@ class MainActivity : ComponentActivity() {
                                                             try {
                                                                 val logMsg = "🟠 Starting request $i\n"
                                                                 logOutput.value += logMsg
-                                                                val res = OpacityCore.get("stress", null)
+                                                                val res = OpacityCore.get("github:profile", null)
                                                                 val reqDuration = System.currentTimeMillis() - reqStart
                                                                 synchronized(lock) {
                                                                     totalDuration += reqDuration
@@ -293,6 +292,21 @@ class MainActivity : ComponentActivity() {
                                                                 }
                                                                 val successMsg = "🟩 Request $i completed - took ${String.format("%.3f", reqDuration / 1000.0)}s\n"
                                                                 logOutput.value += successMsg
+                                                                
+                                                                // Log the response to verify it's real data
+                                                                res.fold(
+                                                                    onSuccess = { value ->
+                                                                        val responsePreview = if (value.toString().length > 100) {
+                                                                            value.toString().substring(0, 100) + "..."
+                                                                        } else {
+                                                                            value.toString()
+                                                                        }
+                                                                        logOutput.value += "📄 Response preview: $responsePreview\n"
+                                                                    },
+                                                                    onFailure = { error ->
+                                                                        logOutput.value += "❌ Request failed: ${error.message}\n"
+                                                                    }
+                                                                )
                                                             } catch (e: Exception) {
                                                                 synchronized(lock) {
                                                                     completed++
@@ -314,7 +328,7 @@ class MainActivity : ComponentActivity() {
                                                 val finalMsg = "🟩 Stress test completed!\nAverage request time: ${String.format("%.3f", avg)}s\nTotal completed: $completed"
                                                 logOutput.value += finalMsg
                                             }
-                                            logOutput.value += "🟩 Launched parallel requests (always 40 at a time)\n"
+                                            logOutput.value += "🟩 Launched parallel requests (always 5 at a time)\n"
                                         } catch (e: Exception) {
                                             logOutput.value += "🟥 Error: ${e.toString()}\n"
                                         }
@@ -343,6 +357,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
     }
 }
