@@ -4,7 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.opacitylabs.opacitycore.JsonToAnyConverter.Companion.parseJsonElementToAny
+import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
+import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -13,12 +14,11 @@ import kotlinx.serialization.json.jsonObject
 import org.mozilla.geckoview.GeckoRuntime
 
 object OpacityCore {
-    enum class Environment {
-        TEST,
-        LOCAL,
-        SANDBOX,
-        STAGING,
-        PRODUCTION,
+    enum class Environment(val code: Int) {
+        LOCAL(1),
+        SANDBOX(2),
+        STAGING(3),
+        PRODUCTION(4),
     }
 
     private lateinit var appContext: Context
@@ -26,6 +26,7 @@ object OpacityCore {
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
     private lateinit var sRuntime: GeckoRuntime
+    private var isBrowserActive = false
 
     init {
         System.loadLibrary("OpacityCore")
@@ -38,13 +39,16 @@ object OpacityCore {
         environment: Environment,
         showErrorsInWebView: Boolean
     ): Int {
-        return init(apiKey, dryRun, environment.ordinal, showErrorsInWebView)
+        return init(apiKey, dryRun, environment.code, showErrorsInWebView)
     }
 
     @JvmStatic
     fun setContext(context: Context) {
         appContext = context
-        sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        // Only create GeckoRuntime if it hasn't been created yet
+        if (!::sRuntime.isInitialized) {
+            sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        }
         cryptoManager = CryptoManager(appContext.applicationContext)
     }
 
@@ -73,33 +77,38 @@ object OpacityCore {
     }
 
     fun presentBrowser() {
-        val intent = Intent()
-        intent.setClassName(
-            appContext.packageName,
-            "com.opacitylabs.opacitycore.InAppBrowserActivity"
-        )
+        val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         appContext.startActivity(intent)
+        isBrowserActive = true
     }
 
-    fun getBrowserCookiesForCurrentUrl(): String {
+    fun getBrowserCookiesForCurrentUrl(): String? {
+        if (!isBrowserActive) {
+            return null
+        }
+
         val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL")
         val resultReceiver = CookieResultReceiver()
         cookiesIntent.putExtra("receiver", resultReceiver)
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
         val json = resultReceiver.waitForResult(1000) // Wait up to 1 second for the result
-        return json.toString()
+        return json?.toString()
     }
 
-    fun getBrowserCookiesForDomain(domain: String): String {
+    fun getBrowserCookiesForDomain(domain: String): String? {
+        if (!isBrowserActive) {
+            return null
+        }
+
         val cookiesIntent = Intent("com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
         val resultsReceiver = CookieResultReceiver()
         cookiesIntent.putExtra("receiver", resultsReceiver)
         cookiesIntent.putExtra("domain", domain)
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(cookiesIntent)
         val json = resultsReceiver.waitForResult(1000)
-        return json.toString()
+        return json?.toString()
     }
 
     fun closeBrowser() {
@@ -107,20 +116,43 @@ object OpacityCore {
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
     }
 
+    fun onBrowserDestroyed() {
+        isBrowserActive = false
+    }
+
+    private fun parseOpacityError(error: String?): OpacityError {
+        if (error == null) {
+            return OpacityError("UnknownError", "No Message")
+        }
+        return try {
+            val json = Json.parseToJsonElement(error).jsonObject
+            val code = json["code"]?.toString()?.replace("\"", "") ?: "unknown"
+            val description = json["description"]?.toString()?.replace("\"", "") ?: "unknown"
+            OpacityError(code, description)
+        } catch (e: Exception) {
+            OpacityError("UnknownError", error)
+        }
+    }
+
     @JvmStatic
-    suspend fun get(name: String, params: Map<String, Any?>?): Map<String, Any?> {
+    suspend fun get(name: String, params: Map<String, Any?>?): Result<Map<String, Any?>> {
         return withContext(Dispatchers.IO) {
-            val paramsString = params?.let { Json.encodeToString(it) }
+            val paramsString = params?.let {
+                val jsonElement = mapToJsonElement(it)
+                Json.encodeToString(jsonElement)
+            }
+
             val res = getNative(name, paramsString)
             if (res.status != 0) {
-                throw Exception(res.err)
+                return@withContext Result.failure(parseOpacityError(res.err))
             }
 
             val map: Map<String, Any?> =
                 Json.parseToJsonElement(res.data!!).jsonObject.mapValues {
                     parseJsonElementToAny(it.value)
                 }
-            map
+
+            return@withContext Result.success(map)
         }
     }
 
