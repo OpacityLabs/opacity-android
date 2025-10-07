@@ -23,6 +23,7 @@ import org.mozilla.geckoview.GeckoSession.ContentDelegate
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
+import java.net.HttpCookie
 
 class InAppBrowserActivity : AppCompatActivity() {
     private val closeReceiver =
@@ -67,6 +68,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                     //  https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.3
                     domain = domain.substring(1)
                 }
+
                 val browserCookies = cookies[domain] ?: JSONObject()
                 receiver?.onReceiveResult(browserCookies)
             }
@@ -155,18 +157,28 @@ class InAppBrowserActivity : AppCompatActivity() {
                                 }
 
                                 "cookies" -> {
-                                    val receivedCookies =
-                                        jsonMessage.getJSONObject("cookies")
-                                    val domain = jsonMessage.getString("domain")
+                                    val receivedCookies = jsonMessage.getString("cookies")
+                                    var domain = jsonMessage.getString("domain")
+
+                                    val lines = receivedCookies.lines().filter { it.isNotBlank() }
+
+                                    val parsedCookies = lines.flatMap { HttpCookie.parse(it) }
+                                    var cookieDict = JSONObject()
+
+                                    for (cookie in parsedCookies) {
+                                        val cookieDomain = cookie.domain
+
+                                        if (cookieDomain != null) {
+                                            domain = cookieDomain
+                                        }
+
+                                        cookieDict.put(cookie.name, cookie.value)
+                                    }
 
                                     cookies[domain] =
                                         cookies[domain]?.let { existingCookies ->
-                                            JsonUtils.mergeJsonObjects(
-                                                existingCookies,
-                                                receivedCookies
-                                            )
-                                        }
-                                            ?: receivedCookies
+                                            JsonUtils.mergeJsonObjects(existingCookies, cookieDict)
+                                        } ?: cookieDict
                                 }
 
                                 else -> {
@@ -185,7 +197,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                     .useTrackingProtection(true)
                     .allowJavascript(true)
                     .build()
-
 
                 geckoSession =
                     GeckoSession(settings).apply {
