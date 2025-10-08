@@ -29,8 +29,16 @@ object OpacityCore {
     private var isBrowserActive = false
 
     init {
+        // Load our wrapper library first, which contains the secure_set implementation
+        try {
+            System.loadLibrary("OpacityCoreWrapper")
+        } catch (e: UnsatisfiedLinkError) {
+            // If wrapper library doesn't exist, continue anyway
+        }
+        // Then load the main OpacityCore library
         System.loadLibrary("OpacityCore")
     }
+
 
     @JvmStatic
     fun initialize(

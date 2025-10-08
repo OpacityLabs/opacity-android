@@ -71,14 +71,24 @@ browser.runtime.onMessage.addListener(function (message, sender, _) {
 });
 
 browser.webNavigation.onDOMContentLoaded.addListener(function (details) {
-  if (details.frameId === 0) {
+  if (true) {
+  // be careful with this can cause max heap error
     // Ensure it's the top-level frame
     // Inject a script to fetch the outerHTML of the current document
+
+          //       browser.runtime.sendNativeMessage("gecko", {
+            //       event: "test",
+           //        domain: JSON.stringify(details),
+         //        });
     browser.tabs
       .executeScript(details.tabId, {
         code: "document.documentElement.outerHTML",
       })
       .then((result) => {
+         //        browser.runtime.sendNativeMessage("gecko", {
+        //           event: "test",
+      //             domain: result,
+     //            });
         if (result && result.length > 0) {
           const htmlBody = result[0]; // The outerHTML of the page
 

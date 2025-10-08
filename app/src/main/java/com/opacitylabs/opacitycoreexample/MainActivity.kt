@@ -26,9 +26,12 @@ import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycore.OpacityError
 import com.opacitylabs.opacitycoreexample.ui.theme.OpacityCoreExampleTheme
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import org.json.JSONObject
+import org.json.JSONArray
 
 class MainActivity : ComponentActivity() {
 
@@ -57,6 +60,36 @@ class MainActivity : ComponentActivity() {
         return envMap
     }
 
+    private fun largeLog(tag: String, content: String) {
+        try {
+            // Try to pretty print JSON
+            val prettyJson = try {
+                when {
+                    content.trim().startsWith("{") -> {
+                        JSONObject(content).toString(2)
+                    }
+                    content.trim().startsWith("[") -> {
+                        JSONArray(content).toString(2)
+                    }
+                    else -> content
+                }
+            } catch (e: Exception) {
+                content // If it's not valid JSON, use original content
+            }
+            
+            // Split into chunks if too long
+            if (prettyJson.length > 4000) {
+                Log.d(tag, prettyJson.substring(0, 4000))
+                largeLog(tag, prettyJson.substring(4000))
+            } else {
+                Log.d(tag, prettyJson)
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error formatting JSON: ${e.message}")
+            Log.d(tag, "Raw content: $content")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setEnv()
@@ -67,7 +100,7 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.LOCAL, false)
 
         Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
 
@@ -94,7 +127,7 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("instagram:comments") }
+                        val flowInput = remember { mutableStateOf("resident_advisor:countries") }
                         val paramsInput =
                             remember { mutableStateOf("{\"previous_response\":\"\"}") }
 
@@ -127,9 +160,18 @@ class MainActivity : ComponentActivity() {
                                     val res = OpacityCore.get(flowInput.value, params)
                                     res.fold(
                                         onSuccess = { value ->
-                                            Log.e(
+                                            Log.d("MainActivity", "=== SUCCESS: Flow '${flowInput.value}' completed ===")
+                                            // Convert the map to a JSON string using the existing JsonConverter
+                                            val jsonString = try {
+                                                val jsonElement = JsonConverter.mapToJsonElement(value)
+                                                Json.encodeToString(jsonElement)
+                                            } catch (e: Exception) {
+                                                // Fallback: convert to string representation
+                                                "Error converting to JSON: ${e.message}\nRaw data: ${value.toString()}"
+                                            }
+                                            largeLog(
                                                 "MainActivity",
-                                                "Res: ${value}value"
+                                                jsonString
                                             )
                                         },
                                         onFailure = {
@@ -170,7 +212,7 @@ class MainActivity : ComponentActivity() {
                                         OpacityCore.initialize(
                                             opacityApiKey,
                                             false,
-                                            OpacityCore.Environment.PRODUCTION,
+                                            OpacityCore.Environment.LOCAL,
                                             true
                                         )
                                         Log.d("MainActivity", "Opacity SDK re-initialized")
@@ -211,9 +253,9 @@ class MainActivity : ComponentActivity() {
                                         OpacityCore.get("test:open_browser_must_succeed", null)
                                     res.fold(
                                         onSuccess = { value ->
-                                            Log.e(
+                                            largeLog(
                                                 "MainActivity",
-                                                "Res: ${value}value"
+                                                "SUCCESS - Test Flow Result: $value"
                                             )
                                             showSuccessDialog = true
                                         },
