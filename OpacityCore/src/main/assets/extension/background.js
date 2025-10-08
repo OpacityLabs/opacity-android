@@ -35,36 +35,17 @@ browser.runtime.onMessage.addListener(function (message, sender, _) {
     try {
       const domain = message.domain || new URL(sender.tab.url).hostname;
 
-      if (!domain) {
-        browser.runtime.sendNativeMessage("gecko", {
-          event: "cookies",
-          cookies: message.cookies,
-          domain: message.domain,
-        });
-
-        return;
-      }
-
-      if (!cookieStore[domain]) {
-        cookieStore[domain] = { cookies: {} };
-      }
-
-      Object.keys(message.cookies || {}).forEach((name) => {
-        const value = message.cookies[name];
-
-        cookieStore[domain].cookies[name] = value;
-      });
-
       browser.runtime.sendNativeMessage("gecko", {
         event: "cookies",
-        cookies: cookieStore[domain].cookies,
+        cookies: message.cookies,
         domain: domain,
       });
+
     } catch (err) {
       browser.runtime.sendNativeMessage("gecko", {
         event: "cookies",
         cookies: message.cookies,
-        domain: message.domain,
+        domain: domain,
       });
     }
   }

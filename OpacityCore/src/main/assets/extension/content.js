@@ -33,20 +33,8 @@ const cookieSetter = (value) => {
   if (!value) {
     return result;
   }
-
-  const mainCookiePart = value.split(";")[0];
-  const cookieParts = mainCookiePart.split("=");
-
-  if (cookieParts.length >= 2) {
-    const cookieName = cookieParts[0].trim();
-    const cookieValue = cookieParts.slice(1).join("=").trim();
-
-    // send to background script
-    if (cookieName) {
-      const cookieData = { [cookieName]: cookieValue };
-      sendCookieData(cookieData);
-    }
-  }
+  
+  sendCookieData(value);
 
   return result;
 };
@@ -69,27 +57,9 @@ const pollForCookies = () => {
         return;
       }
 
-      const parsedCookies = (() => {
-        const cookies = {};
-        if (!currentCookieState) return cookies;
-
-        currentCookieState.split(";").forEach((cookie) => {
-          const parts = cookie.trim().split("=");
-          if (parts.length >= 2) {
-            const name = parts[0].trim();
-            const value = parts.slice(1).join("=").trim();
-            if (name) {
-              cookies[name] = value;
-            }
-          }
-        });
-
-        return cookies;
-      })();
-
       lastCookieState = currentCookieState;
 
-      sendCookieData(parsedCookies);
+      sendCookieData(currentCookieState);
       pollForCookies();
     } catch (error) {
       pollForCookies();
