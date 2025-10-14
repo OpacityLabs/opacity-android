@@ -300,7 +300,7 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getSdkVersions(JNIEnv *env,
                                                             jobject thiz) {
-  const char *res = opacity_core::get_sdk_versions();
+  const char *res = opacity_core::get_api_version();
   jstring jres = env->NewStringUTF(res);
   //    opacity_core::free_string(res);
   return jres;
