@@ -21,6 +21,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.opacitylabs.opacitycore.JsonConverter
 import com.opacitylabs.opacitycore.OpacityCore
 import com.opacitylabs.opacitycore.OpacityError
@@ -29,6 +34,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.concurrent.TimeUnit
+import com.opacity.example.GitHubProfileWorker
 
 class MainActivity : ComponentActivity() {
 
@@ -235,5 +242,24 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        scheduleGitHubProfileFetch()
+    }
+
+    private fun scheduleGitHubProfileFetch() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val workRequest = PeriodicWorkRequestBuilder<GitHubProfileWorker>(
+            15, TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            "GitHubProfileFetch",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
     }
 }

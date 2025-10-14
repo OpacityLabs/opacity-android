@@ -75,6 +75,8 @@ dependencies {
     implementation(project(":OpacityCore"))
     implementation(libs.androidx.espresso.intents)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.work.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

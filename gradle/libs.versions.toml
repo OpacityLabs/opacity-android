@@ -14,10 +14,13 @@ appcompat = "1.7.0"
 material = "1.12.0"
 securityCrypto = "1.1.0-alpha06"
 espressoIntents = "3.6.1"
+workManager = "2.9.1"
+workRuntimeKtx = "2.10.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 geckoview = { module = "org.mozilla.geckoview:geckoview", version.ref = "geckoview" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -37,6 +40,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.6.0" }
 androidx-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "espressoIntents" }
 compose-compiler = { module = "androidx.compose.compiler:compiler", version.ref = "compose-compiler" }
+work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
