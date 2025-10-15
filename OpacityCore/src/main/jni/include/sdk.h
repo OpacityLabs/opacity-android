@@ -12,7 +12,7 @@
 namespace opacity_core {
 #endif  // __cplusplus
 
-#define DEFAULT_TARGET_PORT 443
+typedef struct OurExtensionType OurExtensionType;
 
 typedef void (*IosPrepareRequestFn)(const char*);
 
@@ -66,6 +66,66 @@ typedef bool (*IsWifiConnectedFn)(void);
 
 typedef bool (*IsRootedFn)(void);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -100,7 +160,7 @@ void free_string(char *ptr);
 
 void emit_webview_event(const char *payload);
 
-const char *get_sdk_versions(void);
+const char *get_api_version(void);
 
 extern const char *get_ip_address(void);
 
