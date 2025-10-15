@@ -242,7 +242,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        scheduleGitHubProfileFetch()
+//        scheduleGitHubProfileFetch()
     }
 
     private fun scheduleGitHubProfileFetch() {
