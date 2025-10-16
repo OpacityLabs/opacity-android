@@ -59,6 +59,23 @@ object OpacityCore {
         return sRuntime
     }
 
+    fun isAppForegrounded(): Boolean {
+        return try {
+            val activityManager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val runningProcesses = activityManager.runningAppProcesses
+            if (runningProcesses != null) {
+                for (processInfo in runningProcesses) {
+                    if (processInfo.processName == appContext.packageName) {
+                        return processInfo.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                    }
+                }
+            }
+            false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun securelySet(key: String, value: String) {
         cryptoManager.set(key, value)
     }

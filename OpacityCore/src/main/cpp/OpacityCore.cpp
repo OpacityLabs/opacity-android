@@ -186,6 +186,13 @@ extern "C" const char *get_ip_address() {
   return result; // Caller must free this memory
 }
 
+extern "C" bool android_is_app_foregrounded() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "isAppForegrounded", "()Z");
+  return env->CallBooleanMethod(java_object, method);
+}
+
 extern "C" void android_close_webview() {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
