@@ -63,6 +63,7 @@ dependencies {
     implementation libs.material
     implementation libs.geckoview
     implementation libs.androidx.security.crypto
+    implementation libs.androidx.lifecycle.process
     implementation libs.kotlinx.serialization.json
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

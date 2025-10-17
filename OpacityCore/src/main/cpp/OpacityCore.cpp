@@ -233,6 +233,16 @@ android_get_browser_cookies_for_domain(const char *domain) {
   return val_str; // Caller must free this memory
 }
 
+extern "C" bool android_is_app_foregrounded() {
+  JNIEnv *env = GetJniEnv();
+
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "isAppForegrounded", "()Z");
+  
+  jboolean result = env->CallBooleanMethod(java_object, method);
+  return static_cast<bool>(result);
+}
+
 extern "C" JNIEXPORT jint JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_init(
     JNIEnv *env, jobject thiz, jstring api_key, jboolean dry_run,

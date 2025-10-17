@@ -3,6 +3,9 @@ package com.opacitylabs.opacitycore
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
 import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
@@ -27,6 +30,7 @@ object OpacityCore {
     private var headers: Bundle = Bundle()
     private lateinit var sRuntime: GeckoRuntime
     private var isBrowserActive = false
+    private var isForegrounded = false
 
     init {
         System.loadLibrary("OpacityCore")
@@ -50,6 +54,17 @@ object OpacityCore {
             sRuntime = GeckoRuntime.create(appContext.applicationContext)
         }
         cryptoManager = CryptoManager(appContext.applicationContext)
+        
+        // Set up lifecycle observer to track foreground state
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> isForegrounded = true
+                    Lifecycle.Event.ON_STOP -> isForegrounded = false
+                    else -> {}
+                }
+            }
+        )
     }
 
     fun getRuntime(): GeckoRuntime {
@@ -118,6 +133,10 @@ object OpacityCore {
 
     fun onBrowserDestroyed() {
         isBrowserActive = false
+    }
+
+    fun isAppForegrounded(): Boolean {
+        return isForegrounded
     }
 
     private fun parseOpacityError(error: String?): OpacityError {
