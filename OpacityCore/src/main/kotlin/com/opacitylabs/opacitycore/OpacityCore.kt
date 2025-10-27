@@ -2,6 +2,7 @@ package com.opacitylabs.opacitycore
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
@@ -74,6 +75,54 @@ object OpacityCore {
         } catch (e: Exception) {
             false
         }
+    }
+
+    fun getOsVersion(): String {
+        return Build.VERSION.RELEASE
+    }
+
+    fun getSdkVersion(): Int {
+        return Build.VERSION.SDK_INT
+    }
+
+    fun getDeviceManufacturer(): String {
+        return Build.MANUFACTURER
+    }
+
+    fun getDeviceModel(): String {
+        return Build.MODEL
+    }
+
+    fun getDeviceLocale(): String {
+        return java.util.Locale.getDefault().toLanguageTag()
+    }
+
+    fun getScreenWidth(): Int {
+        val displayMetrics = appContext.resources.displayMetrics
+        return displayMetrics.widthPixels
+    }
+
+    fun getScreenHeight(): Int {
+        val displayMetrics = appContext.resources.displayMetrics
+        return displayMetrics.heightPixels
+    }
+
+    fun getScreenDensity(): Float {
+        val displayMetrics = appContext.resources.displayMetrics
+        return displayMetrics.density
+    }
+
+    fun getScreenDpi(): Int {
+        val displayMetrics = appContext.resources.displayMetrics
+        return displayMetrics.densityDpi
+    }
+
+    fun getDeviceCpu(): String {
+        return Build.SUPPORTED_ABIS.firstOrNull() ?: Build.CPU_ABI
+    }
+
+    fun getDeviceCodename(): String {
+        return Build.DEVICE
     }
 
     fun securelySet(key: String, value: String) {
