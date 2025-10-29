@@ -95,14 +95,9 @@ window.addEventListener("message", (event) => {
   if (event.source !== window) return;
   if (event.data?.type === "intercepted_request") {
     try {
-      const dataStr =
-        typeof event.data.payload === "string"
-          ? event.data.payload
-          : JSON.stringify(event.data.payload);
-
       browser.runtime.sendMessage({
         type: "intercepted_request",
-        data: dataStr,
+        data: event.data.payload,
       });
     } catch (err) {}
   }
