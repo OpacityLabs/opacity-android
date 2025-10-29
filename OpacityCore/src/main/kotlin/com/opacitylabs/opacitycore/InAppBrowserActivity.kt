@@ -81,6 +81,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var htmlBody: String = ""
     private var currentUrl: String = ""
     private val visitedUrls = mutableListOf<String>()
+    private var interceptExtensionEnabled = false
 
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -133,25 +134,17 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
         val controller = OpacityCore.getRuntime().webExtensionController
+        interceptExtensionEnabled = intent.getBooleanExtra("enableInterceptRequests", false)
 
-        controller.installBuiltIn("resource://android/assets/extension/")
-            .accept { ext -> initWebExtension(ext, false) }
-
-            controller.installBuiltIn("resource://android/assets/interceptExtension/")
-            .accept { ext -> initWebExtension(ext, true) }
-        }
-    private fun initWebExtension(extension: WebExtension?, shouldIntercept: Boolean) {
-        extension?.setMessageDelegate(
-            object : WebExtension.MessageDelegate {
-                override fun onMessage(
-                    nativeApp: String,
-                    message: Any,
-                    sender: WebExtension.MessageSender
-                ): GeckoResult<Any>? {
+        // Create shared message delegate for both extensions
+        val sharedMessageDelegate = object : WebExtension.MessageDelegate {
+            override fun onMessage(
+                nativeApp: String,
+                message: Any,
+                sender: WebExtension.MessageSender
+            ): GeckoResult<Any>? {
+                try {
                     val jsonMessage = message as JSONObject
-
-                    // This are the messages from our injected JS script to extract
-                    // cookies
                     when (jsonMessage.getString("event")) {
                         "html_body" -> {
                             htmlBody = jsonMessage.getString("html")
@@ -184,15 +177,14 @@ class InAppBrowserActivity : AppCompatActivity() {
                                 cookies[domain]?.let { existingCookies ->
                                     JsonUtils.mergeJsonObjects(existingCookies, cookieDict)
                                 } ?: cookieDict
-                        }
+                        }       
 
                         "intercepted_request" -> {
-                            Log.d("MainActivity", "shouldIntercept: $shouldIntercept")
-                            Log.d("MainActivity", "jsonMessage: $jsonMessage")
-                            if (shouldIntercept) {
-                                val requestData = jsonMessage.getString("data")
-                                Log.d("MainActivity", "Intercepted request: $requestData")
-                                emitInterceptedRequest(requestData)
+                            if (interceptExtensionEnabled) {
+                                val requestData = jsonMessage.optString("data", "")
+                                if (requestData.isNotEmpty()) {
+                                    emitInterceptedRequest(requestData)
+                                }
                             }
                         }
 
@@ -200,13 +192,29 @@ class InAppBrowserActivity : AppCompatActivity() {
                             // Intentionally left blank
                         }
                     }
-
-                    return super.onMessage(nativeApp, message, sender)
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Error processing extension message", e)
                 }
-            },
-            "gecko"
-        )
 
+                return super.onMessage(nativeApp, message, sender)
+            }
+        }
+
+        // Install main extension
+        controller.installBuiltIn("resource://android/assets/extension/")
+            .accept { ext ->
+                ext?.setMessageDelegate(sharedMessageDelegate, "gecko")
+            }
+
+        // Install intercept extension if enabled
+        if (interceptExtensionEnabled) {
+            controller.installBuiltIn("resource://android/assets/interceptExtension/")
+                .accept { ext ->
+                    ext?.setMessageDelegate(sharedMessageDelegate, "gecko")
+                }
+        }
+
+        // Create GeckoSession only once
         val settings = GeckoSessionSettings.Builder()
             .usePrivateMode(true)
             .useTrackingProtection(true)
@@ -349,6 +357,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         val event: Map<String, Any> =
             mapOf("event" to "close", "id" to System.currentTimeMillis().toString())
         OpacityCore.emitWebviewEvent(JSONObject(event).toString())
+        interceptExtensionEnabled = false
         finish()
     }
 
