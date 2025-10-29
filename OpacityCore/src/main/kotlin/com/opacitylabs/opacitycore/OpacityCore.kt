@@ -3,6 +3,7 @@ package com.opacitylabs.opacitycore
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
 import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
@@ -93,10 +94,11 @@ object OpacityCore {
         headers.putString(key.lowercase(), value)
     }
 
-    fun presentBrowser() {
+    fun presentBrowser(shouldIntercept: Boolean) {
         val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
+        intent.putExtra("enableInterceptRequests", shouldIntercept)
         appContext.startActivity(intent)
         isBrowserActive = true
     }
