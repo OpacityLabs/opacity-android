@@ -102,11 +102,11 @@ object OpacityCore {
         headers.putString(key.lowercase(), value)
     }
 
-    fun presentBrowser(shouldIntercept: Boolean) {
+    fun presentBrowser(interceptRequests: Boolean) {
         val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
-        intent.putExtra("enableInterceptRequests", shouldIntercept)
+        intent.putExtra("enableInterceptRequests", interceptRequests)
         appContext.startActivity(intent)
         isBrowserActive = true
     }

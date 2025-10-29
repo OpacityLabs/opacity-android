@@ -136,7 +136,7 @@ extern "C" void android_set_request_header(const char *key, const char *value) {
   env->CallVoidMethod(java_object, method, jkey, jvalue);
 }
 
-extern "C" void android_present_webview(bool shouldIntercept) {
+extern "C" void android_present_webview(bool interceptRequests) {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
   jclass jOpacityCore = env->GetObjectClass(java_object);
@@ -144,9 +144,8 @@ extern "C" void android_present_webview(bool shouldIntercept) {
   // Get the method ID for the method you want to call
   jmethodID method = env->GetMethodID(jOpacityCore, "presentBrowser", "(Z)V");
 
-  // Call the method with the necessary parameters
-  jboolean jshouldIntercept = shouldIntercept ? JNI_TRUE : JNI_FALSE;
-  env->CallVoidMethod(java_object, method, jshouldIntercept);
+  jboolean jinterceptRequests = interceptRequests ? JNI_TRUE : JNI_FALSE;
+  env->CallVoidMethod(java_object, method, jinterceptRequests);
 }
 
 extern "C" const char *get_ip_address() {
