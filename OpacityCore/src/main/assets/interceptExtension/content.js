@@ -94,9 +94,11 @@ script.textContent = `
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;
   if (event.data?.type === "intercepted_request") {
-    browser.runtime.sendMessage({
-      type: "intercepted_request",
-      data: event.data.payload,
-    });
+    try {
+      browser.runtime.sendMessage({
+        type: "intercepted_request",
+        data: event.data.payload,
+      });
+    } catch (err) {}
   }
 });

@@ -181,12 +181,13 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                         "intercepted_request" -> {
                             if (interceptExtensionEnabled) {
-                                val requestData = jsonMessage.optString("data", "")
-                                if (requestData.isNotEmpty()) {
+                                val requestData = jsonMessage.optJSONObject("data")
+                                if (requestData != null) {
                                     emitInterceptedRequest(requestData)
                                 }
                             }
                         }
+
 
                         else -> {
                             // Intentionally left blank
@@ -309,7 +310,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         geckoSession.loadUri(url)
     }
 
-    private fun emitInterceptedRequest(requestData: String) {
+    private fun emitInterceptedRequest(requestData: JSONObject) {
         val event: MutableMap<String, Any?> =
             mutableMapOf(
                 "event" to "intercepted_request",
