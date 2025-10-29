@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("resident_advisor:countries") }
+                        val flowInput = remember { mutableStateOf("rippling:profile") }
                         val paramsInput =
                             remember { mutableStateOf("{\"previous_response\":\"\"}") }
 
