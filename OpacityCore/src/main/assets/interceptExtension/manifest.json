@@ -5,7 +5,7 @@
   "description": "Opacity extension for GeckoView for intercepting requests",
   "applications": {
     "gecko": {
-      "id": "webview-intercept@opacitylabs.com",
+      "id": "webview@opacitylabs.com",
       "strict_min_version": "68.0"
     }
   },
