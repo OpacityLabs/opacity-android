@@ -1,5 +1,6 @@
 package com.opacitylabs.opacitycore
 
+import android.util.Log
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
