@@ -3,7 +3,6 @@ package com.opacitylabs.opacitycore
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
 import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny

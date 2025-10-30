@@ -1,5 +1,6 @@
 package com.opacitylabs.opacitycore
 
+import android.util.Log
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -24,7 +25,7 @@ import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
 import java.net.HttpCookie
-import android.util.Log
+
 class InAppBrowserActivity : AppCompatActivity() {
     private val closeReceiver =
         object : BroadcastReceiver() {
@@ -314,7 +315,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         val event: MutableMap<String, Any?> =
             mutableMapOf(
                 "event" to "intercepted_request",
-                "data" to requestData,
+                "request_type" to requestData.optString("request_type"),
+                "data" to requestData.opt("data"),
                 "id" to System.currentTimeMillis().toString()
             )
         OpacityCore.emitWebviewEvent(JSONObject(event).toString())
