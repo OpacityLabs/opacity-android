@@ -28,6 +28,9 @@ script.textContent = `
                 body: init?.body,
             });
             const response = await originalFetch.apply(this, arguments);
+            if (!response || !response.clone) {
+                return response;
+            }
             const clonedResponse = response.clone();
             let responseHeaders = clonedResponse.headers || {};
             if (responseHeaders instanceof Headers) {
