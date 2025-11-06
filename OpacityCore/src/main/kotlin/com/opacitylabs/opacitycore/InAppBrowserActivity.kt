@@ -1,5 +1,6 @@
 package com.opacitylabs.opacitycore
 
+import android.util.Log
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -81,6 +82,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var htmlBody: String = ""
     private var currentUrl: String = ""
     private val visitedUrls = mutableListOf<String>()
+    private var interceptExtensionEnabled = false
 
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,161 +134,193 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setCustomView(closeButton, actionBarLayoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
-        OpacityCore.getRuntime()
-            .webExtensionController
-            .installBuiltIn("resource://android/assets/extension/")
-            .accept { ext ->
-                ext?.setMessageDelegate(
-                    object : WebExtension.MessageDelegate {
-                        override fun onMessage(
-                            nativeApp: String,
-                            message: Any,
-                            sender: WebExtension.MessageSender
-                        ): GeckoResult<Any>? {
-                            val jsonMessage = message as JSONObject
+        val controller = OpacityCore.getRuntime().webExtensionController
+        interceptExtensionEnabled = intent.getBooleanExtra("enableInterceptRequests", false)
 
-                            // This are the messages from our injected JS script to extract
-                            // cookies
-                            when (jsonMessage.getString("event")) {
-                                "html_body" -> {
-                                    htmlBody = jsonMessage.getString("html")
-                                    emitNavigationEvent()
-
-                                    // clear the html_body, needed so we stay consistent with iOS
-                                    htmlBody = ""
-                                }
-
-                                "cookies" -> {
-                                    val receivedCookies = jsonMessage.getString("cookies")
-                                    var domain = jsonMessage.getString("domain")
-
-                                    val lines = receivedCookies.lines().filter { it.isNotBlank() }
-
-                                    val parsedCookies = lines.flatMap { HttpCookie.parse(it) }
-                                    var cookieDict = JSONObject()
-
-                                    for (cookie in parsedCookies) {
-                                        val cookieDomain = cookie.domain
-
-                                        if (cookieDomain != null) {
-                                            domain = cookieDomain
-                                        }
-
-                                        cookieDict.put(cookie.name, cookie.value)
-                                    }
-
-                                    cookies[domain] =
-                                        cookies[domain]?.let { existingCookies ->
-                                            JsonUtils.mergeJsonObjects(existingCookies, cookieDict)
-                                        } ?: cookieDict
-                                }
-
-                                else -> {
-                                    // Intentionally left blank
-                                }
-                            }
-
-                            return super.onMessage(nativeApp, message, sender)
-                        }
-                    },
-                    "gecko"
-                )
-
-                val settings = GeckoSessionSettings.Builder()
-                    .usePrivateMode(true)
-                    .useTrackingProtection(true)
-                    .allowJavascript(true)
-                    .build()
-
-                geckoSession =
-                    GeckoSession(settings).apply {
-                        setContentDelegate(object : ContentDelegate {})
-                        open(OpacityCore.getRuntime())
-                    }
-
-                geckoSession.settings.apply { allowJavascript = true }
-
-                val headers: Bundle? = intent.getBundleExtra("headers")
-                val customUserAgent = headers?.getString("user-agent")
-                if (customUserAgent != null) {
-                    geckoSession.settings.userAgentOverride = customUserAgent
-                }
-
-                geckoSession.navigationDelegate =
-                    object : GeckoSession.NavigationDelegate {
-                        override fun onLoadRequest(
-                            session: GeckoSession,
-                            request: GeckoSession.NavigationDelegate.LoadRequest
-                        ): GeckoResult<AllowOrDeny>? {
-                            currentUrl = request.uri
-                            addToVisitedUrls(request.uri)
-
+        // Create shared message delegate for both extensions
+        val sharedMessageDelegate = object : WebExtension.MessageDelegate {
+            override fun onMessage(
+                nativeApp: String,
+                message: Any,
+                sender: WebExtension.MessageSender
+            ): GeckoResult<Any>? {
+                try {
+                    val jsonMessage = message as JSONObject
+                    when (jsonMessage.getString("event")) {
+                        "html_body" -> {
+                            htmlBody = jsonMessage.getString("html")
                             emitNavigationEvent()
 
-                            return super.onLoadRequest(session, request)
+                            // clear the html_body, needed so we stay consistent with iOS
+                            htmlBody = ""
                         }
 
-                        override fun onLocationChange(
-                            session: GeckoSession,
-                            url: String?,
-                            perms:
-                            MutableList<
-                                    GeckoSession.PermissionDelegate.ContentPermission>,
-                            hasUserGesture: Boolean
-                        ) {
-                            if (url != null) {
-                                addToVisitedUrls(url)
-                                emitLocationEvent(url)
+                        "cookies" -> {
+                            val receivedCookies = jsonMessage.getString("cookies")
+                            var domain = jsonMessage.getString("domain")
+
+                            val lines = receivedCookies.lines().filter { it.isNotBlank() }
+
+                            val parsedCookies = lines.flatMap { HttpCookie.parse(it) }
+                            var cookieDict = JSONObject()
+
+                            for (cookie in parsedCookies) {
+                                val cookieDomain = cookie.domain
+
+                                if (cookieDomain != null) {
+                                    domain = cookieDomain
+                                }
+
+                                cookieDict.put(cookie.name, cookie.value)
+                            }
+
+                            cookies[domain] =
+                                cookies[domain]?.let { existingCookies ->
+                                    JsonUtils.mergeJsonObjects(existingCookies, cookieDict)
+                                } ?: cookieDict
+                        }       
+
+                        "intercepted_request" -> {
+                            if (interceptExtensionEnabled) {
+                                val requestData = jsonMessage.optJSONObject("data")
+                                if (requestData != null) {
+                                    emitInterceptedRequest(requestData)
+                                }
                             }
                         }
+
+
+                        else -> {
+                            // Intentionally left blank
+                        }
                     }
-
-                geckoView = GeckoView(this).apply { setSession(geckoSession) }
-
-                // Create a container layout to properly handle the action bar spacing
-                val container = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-
-                    // Handle window insets for the container
-                    ViewCompat.setOnApplyWindowInsetsListener(this) { view, windowInsets ->
-                        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-                        view.setPadding(0, insets.top, 0, insets.bottom)
-                        windowInsets
-                    }
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Error processing extension message", e)
                 }
 
-                // Configure GeckoView layout params to account for action bar
-                val geckoLayoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-                ).apply {
-                    // Add top margin to account for action bar height
-                    val actionBarHeight = supportActionBar?.height ?: 0
-                    if (actionBarHeight == 0) {
-                        // Fallback to standard action bar height
-                        val typedArray =
-                            theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
-                        topMargin = typedArray.getDimensionPixelSize(0, 0)
-                        typedArray.recycle()
-                    } else {
-                        topMargin = actionBarHeight
-                    }
-                }
-
-                geckoView.layoutParams = geckoLayoutParams
-                container.addView(geckoView)
-
-                setContentView(container)
-                val url = intent.getStringExtra("url")!!
-
-                geckoSession.loadUri(url)
+                return super.onMessage(nativeApp, message, sender)
             }
+        }
+
+        // Install main extension
+        controller.installBuiltIn("resource://android/assets/extension/")
+            .accept { ext ->
+                ext?.setMessageDelegate(sharedMessageDelegate, "gecko")
+            }
+
+        // Install intercept extension if enabled
+        if (interceptExtensionEnabled) {
+            controller.installBuiltIn("resource://android/assets/interceptExtension/")
+                .accept { ext ->
+                    ext?.setMessageDelegate(sharedMessageDelegate, "gecko")
+                }
+        }
+
+        // Create GeckoSession only once
+        val settings = GeckoSessionSettings.Builder()
+            .usePrivateMode(true)
+            .useTrackingProtection(true)
+            .allowJavascript(true)
+            .build()
+
+        geckoSession =
+            GeckoSession(settings).apply {
+                setContentDelegate(object : ContentDelegate {})
+                open(OpacityCore.getRuntime())
+            }
+
+        geckoSession.settings.apply { allowJavascript = true }
+
+        val headers: Bundle? = intent.getBundleExtra("headers")
+        val customUserAgent = headers?.getString("user-agent")
+        if (customUserAgent != null) {
+            geckoSession.settings.userAgentOverride = customUserAgent
+        }
+
+        geckoSession.navigationDelegate =
+            object : GeckoSession.NavigationDelegate {
+                override fun onLoadRequest(
+                    session: GeckoSession,
+                    request: GeckoSession.NavigationDelegate.LoadRequest
+                ): GeckoResult<AllowOrDeny>? {
+                    currentUrl = request.uri
+                    addToVisitedUrls(request.uri)
+
+                    emitNavigationEvent()
+
+                    return super.onLoadRequest(session, request)
+                }
+
+                override fun onLocationChange(
+                    session: GeckoSession,
+                    url: String?,
+                    perms:
+                    MutableList<
+                            GeckoSession.PermissionDelegate.ContentPermission>,
+                    hasUserGesture: Boolean
+                ) {
+                    if (url != null) {
+                        addToVisitedUrls(url)
+                        emitLocationEvent(url)
+                    }
+                }
+            }
+
+        geckoView = GeckoView(this).apply { setSession(geckoSession) }
+
+        // Create a container layout to properly handle the action bar spacing
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+
+            // Handle window insets for the container
+            ViewCompat.setOnApplyWindowInsetsListener(this) { view, windowInsets ->
+                val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                view.setPadding(0, insets.top, 0, insets.bottom)
+                windowInsets
+            }
+        }
+
+        // Configure GeckoView layout params to account for action bar
+        val geckoLayoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        ).apply {
+            // Add top margin to account for action bar height
+            val actionBarHeight = supportActionBar?.height ?: 0
+            if (actionBarHeight == 0) {
+                // Fallback to standard action bar height
+                val typedArray =
+                    theme.obtainStyledAttributes(intArrayOf(android.R.attr.actionBarSize))
+                topMargin = typedArray.getDimensionPixelSize(0, 0)
+                typedArray.recycle()
+            } else {
+                topMargin = actionBarHeight
+            }
+        }
+
+        geckoView.layoutParams = geckoLayoutParams
+        container.addView(geckoView)
+
+        setContentView(container)
+        val url = intent.getStringExtra("url")!!
+
+        geckoSession.loadUri(url)
     }
 
+    private fun emitInterceptedRequest(requestData: JSONObject) {
+        val event: MutableMap<String, Any?> =
+            mutableMapOf(
+                "event" to "intercepted_request",
+                "request_type" to requestData.optString("request_type"),
+                "data" to requestData.opt("data"),
+                "id" to System.currentTimeMillis().toString()
+            )
+        OpacityCore.emitWebviewEvent(JSONObject(event).toString())
+    }
     private fun emitLocationEvent(url: String) {
         val event: Map<String, Any?> =
             mapOf(
@@ -326,6 +360,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         val event: Map<String, Any> =
             mapOf("event" to "close", "id" to System.currentTimeMillis().toString())
         OpacityCore.emitWebviewEvent(JSONObject(event).toString())
+        interceptExtensionEnabled = false
         finish()
     }
 
