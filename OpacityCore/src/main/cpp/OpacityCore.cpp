@@ -194,6 +194,133 @@ extern "C" bool android_is_app_foregrounded() {
   return env->CallBooleanMethod(java_object, method);
 }
 
+extern "C" const char *android_get_os_version() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getOsVersion", "()Ljava/lang/String;");
+  auto res = (jstring)env->CallObjectMethod(java_object, method);
+
+  if (res == nullptr)
+  {
+    return "";
+  }
+
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  return val_str;
+}
+
+extern "C" const char *android_get_device_manufacturer() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getDeviceManufacturer", "()Ljava/lang/String;");
+  auto res = (jstring)env->CallObjectMethod(java_object, method);
+
+  if (res == nullptr)
+  {
+    return "";
+  }
+
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  return val_str;
+}
+
+extern "C" const char *android_get_device_model() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getDeviceModel", "()Ljava/lang/String;");
+  auto res = (jstring)env->CallObjectMethod(java_object, method);
+
+  if (res == nullptr)
+  {
+    return "";
+  }
+
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  return val_str;
+}
+
+extern "C" const char *android_get_device_locale() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getDeviceLocale", "()Ljava/lang/String;");
+  auto res = (jstring)env->CallObjectMethod(java_object, method);
+
+  if (res == nullptr)
+  {
+    return "";
+  }
+
+  const char *val_str = env->GetStringUTFChars(res, nullptr);
+  return val_str;
+}
+
+extern "C" int android_get_sdk_version() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getSdkVersion", "()I");
+  return env->CallIntMethod(java_object, method);
+}
+
+extern "C" int android_get_screen_width() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getScreenWidth", "()I");
+  return env->CallIntMethod(java_object, method);
+}
+
+extern "C" int android_get_screen_height() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getScreenHeight", "()I");
+  return env->CallIntMethod(java_object, method);
+}
+
+extern "C" float android_get_screen_density() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getScreenDensity", "()F");
+  return env->CallFloatMethod(java_object, method);
+}
+
+extern "C" int android_get_screen_dpi() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getScreenDpi", "()I");
+  return env->CallIntMethod(java_object, method);
+}
+
+extern "C" const char *android_get_device_cpu() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getDeviceCpu", "()Ljava/lang/String;");
+  jstring jCpu = (jstring)env->CallObjectMethod(java_object, method);
+  if (jCpu == nullptr)
+  {
+    return strdup("");
+  }
+  const char *cpu = env->GetStringUTFChars(jCpu, nullptr);
+  char *result = strdup(cpu);
+  env->ReleaseStringUTFChars(jCpu, cpu);
+  env->DeleteLocalRef(jCpu);
+  return result;
+}
+
+extern "C" const char *android_get_device_codename() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getDeviceCodename", "()Ljava/lang/String;");
+  jstring jCodename = (jstring)env->CallObjectMethod(java_object, method);
+  if (jCodename == nullptr)
+  {
+    return strdup("");
+  }
+  const char *codename = env->GetStringUTFChars(jCodename, nullptr);
+  char *result = strdup(codename);
+  env->ReleaseStringUTFChars(jCodename, codename);
+  env->DeleteLocalRef(jCodename);
+  return result;
+}
+
 extern "C" void android_close_webview() {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
