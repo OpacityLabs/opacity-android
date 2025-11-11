@@ -183,6 +183,12 @@ object OpacityCore {
         LocalBroadcastManager.getInstance(appContext).sendBroadcast(closeIntent)
     }
 
+    fun changeUrlInBrowser(url: String) {
+        val changeUrlIntent = Intent("com.opacitylabs.opacitycore.CHANGE_URL")
+        changeUrlIntent.putExtra("url", url)
+        LocalBroadcastManager.getInstance(appContext).sendBroadcast(changeUrlIntent)
+    }
+
     fun onBrowserDestroyed() {
         isBrowserActive = false
     }
