@@ -84,6 +84,20 @@ class InAppBrowserActivity : AppCompatActivity() {
     private val visitedUrls = mutableListOf<String>()
     private var interceptExtensionEnabled = false
 
+    private val changeUrlReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == "com.opacitylabs.opacitycore.CHANGE_URL") {
+                    currentUrl = intent.getStringExtra("url")!!
+                    if (geckoSession.isOpen) {
+                        geckoSession.loadUri(currentUrl)
+                    } else {
+                        Log.d("MainActivity", "Warning: Browser is not open.")
+                    }
+                }
+            }
+        }
+
     @SuppressLint("WrongThread")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,6 +127,11 @@ class InAppBrowserActivity : AppCompatActivity() {
         localBroadcastManager.registerReceiver(
             cookiesForDomainRequestReceiver,
             IntentFilter("com.opacitylabs.opacitycore.GET_COOKIES_FOR_DOMAIN")
+        )
+
+        localBroadcastManager.registerReceiver(
+            changeUrlReceiver,
+            IntentFilter("com.opacitylabs.opacitycore.CHANGE_URL")
         )
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
