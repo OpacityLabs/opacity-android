@@ -18,7 +18,7 @@ typedef void (*IosPrepareRequestFn)(const char*);
 
 typedef void (*IosSetRequestHeaderFn)(const char*, const char*);
 
-typedef void (*IosPresentWebviewFn)(void);
+typedef void (*IosPresentWebviewFn)(bool);
 
 typedef void (*IosCloseWebviewFn)(void);
 
@@ -81,6 +81,8 @@ typedef int32_t (*GetScreenDpiFn)(void);
 typedef const char *(*GetDeviceCpuFn)(void);
 
 typedef const char *(*GetDeviceCodenameFn)(void);
+
+typedef void (*IosWebviewChangeUrlFn)(const char*);
 
 
 
@@ -164,13 +166,13 @@ extern const int32_t OPACITY_ENVIRONMENT_STAGING;
 
 extern const int32_t OPACITY_ENVIRONMENT_PRODUCTION;
 
-int32_t init(const char *api_key_str,
-             bool dry_run,
-             int32_t backend_environment,
-             bool show_errors_in_webview,
-             char **error_ptr);
+int32_t opacity_init(const char *api_key_str,
+                     bool dry_run,
+                     int32_t backend_environment,
+                     bool show_errors_in_webview,
+                     char **error_ptr);
 
-int32_t get(const char *name, const char *params, char **res_ptr, char **err_ptr);
+int32_t opacity_get(const char *name, const char *params, char **res_ptr, char **err_ptr);
 
 void free_string(char *ptr);
 
@@ -237,7 +239,8 @@ void register_ios_callbacks(IosPrepareRequestFn ios_prepare_request,
                             GetScreenDensityFn get_screen_density,
                             GetScreenDpiFn get_screen_dpi,
                             GetDeviceCpuFn get_device_cpu,
-                            GetDeviceCodenameFn get_device_codename);
+                            GetDeviceCodenameFn get_device_codename,
+                            IosWebviewChangeUrlFn ios_webview_change_url);
 
 extern void secure_set(const char *key, const char *value);
 
@@ -247,13 +250,15 @@ extern void android_prepare_request(const char *url);
 
 extern void android_set_request_header(const char *key, const char *value);
 
-extern void android_present_webview(bool intercept_requests);
+extern void android_present_webview(bool should_intercept);
 
 extern void android_close_webview(void);
 
 extern const char *android_get_browser_cookies_for_current_url(void);
 
 extern const char *android_get_browser_cookies_for_domain(const char *domain);
+
+extern void android_webview_change_url(const char *url);
 
 #ifdef __cplusplus
 }  // extern "C"
