@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.LOCAL, false)
 
         Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
 
@@ -101,9 +101,9 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("instagram:comments") }
+                        val flowInput = remember { mutableStateOf("x:profile") }
                         val paramsInput =
-                            remember { mutableStateOf("{\"previous_response\":\"\"}") }
+                            remember { mutableStateOf("") }
 
                         TextField(
                             value = flowInput.value,
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
                                         OpacityCore.initialize(
                                             opacityApiKey,
                                             false,
-                                            OpacityCore.Environment.PRODUCTION,
+                                            OpacityCore.Environment.LOCAL,
                                             true
                                         )
                                         Log.d("MainActivity", "Opacity SDK re-initialized")
