@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.LOCAL, false)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
 
         Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
 
@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("x:profile") }
+                        val flowInput = remember { mutableStateOf("") }
                         val paramsInput =
                             remember { mutableStateOf("") }
 
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
                                         OpacityCore.initialize(
                                             opacityApiKey,
                                             false,
-                                            OpacityCore.Environment.LOCAL,
+                                            OpacityCore.Environment.PRODUCTION,
                                             true
                                         )
                                         Log.d("MainActivity", "Opacity SDK re-initialized")
