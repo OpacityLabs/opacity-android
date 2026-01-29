@@ -63,7 +63,6 @@ object OpacityCore {
 
     private fun installExtensions() {
         if (extensionsInstalled) return
-        extensionsInstalled = true
 
         val controller = sRuntime.webExtensionController
 
@@ -80,6 +79,8 @@ object OpacityCore {
                     android.util.Log.e("OpacityCore", "Failed to install main extension", e)
                 }
             )
+
+        extensionsInstalled = true
 
         // For intercepting browser requests
         controller.installBuiltIn("resource://android/assets/interceptExtension/")
