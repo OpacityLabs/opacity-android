@@ -101,9 +101,9 @@ class MainActivity : ComponentActivity() {
                     containerColor = androidx.compose.ui.graphics.Color.Black
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        val flowInput = remember { mutableStateOf("instagram:comments") }
+                        val flowInput = remember { mutableStateOf("") }
                         val paramsInput =
-                            remember { mutableStateOf("{\"previous_response\":\"\"}") }
+                            remember { mutableStateOf("") }
 
                         TextField(
                             value = flowInput.value,
