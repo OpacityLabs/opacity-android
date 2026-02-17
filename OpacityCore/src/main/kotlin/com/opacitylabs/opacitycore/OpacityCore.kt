@@ -46,7 +46,7 @@ object OpacityCore {
         environment: Environment,
         showErrorsInWebView: Boolean
     ): Int {
-        return init(apiKey, dryRun, environment.code, showErrorsInWebView)
+        return init(appContext, apiKey, dryRun, environment.code, showErrorsInWebView)
     }
 
     @JvmStatic
@@ -287,6 +287,7 @@ object OpacityCore {
     }
 
     private external fun init(
+        context: Context,
         apiKey: String,
         dryRun: Boolean,
         environment: Int,
