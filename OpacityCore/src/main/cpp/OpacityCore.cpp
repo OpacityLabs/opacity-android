@@ -388,7 +388,7 @@ Java_com_opacitylabs_opacitycore_OpacityCore_init(
   java_object = env->NewGlobalRef(thiz);
   char *err;
   const char *api_key_str = env->GetStringUTFChars(api_key, nullptr);
-  int result = opacity_core::init(api_key_str, dry_run,
+  int result = opacity_core::opacity_init(api_key_str, dry_run,
                                   static_cast<int>(environment_enum),
                                   show_errors_in_webview, &err);
   if (result != opacity_core::OPACITY_OK) {
@@ -441,7 +441,7 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
   const char *name_str = env->GetStringUTFChars(name, nullptr);
   const char *params_str =
       params != nullptr ? env->GetStringUTFChars(params, nullptr) : nullptr;
-  int status = opacity_core::get(name_str, params_str, &res, &err);
+  int status = opacity_core::opacity_get(name_str, params_str, &res, &err);
   return createOpacityResponse(env, status, res, err);
 }
 

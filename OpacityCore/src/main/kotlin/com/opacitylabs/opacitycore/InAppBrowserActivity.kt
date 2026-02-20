@@ -43,18 +43,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                 ) {
                     val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
                     val domain = java.net.URL(currentUrl).host
-                    val matchedCookies = JSONObject()
-                    for ((cookieDomain, cookieObject) in cookies) {
-                        val cleanDomain = cookieDomain.trimStart('.')
-                        if (domain == cleanDomain || domain.endsWith(".$cleanDomain")) {
-                            val keys = cookieObject.keys()
-                            while (keys.hasNext()) {
-                                val key = keys.next()
-                                matchedCookies.put(key, cookieObject.get(key))
-                            }
-                        }
-                    }
-                    receiver?.onReceiveResult(matchedCookies)
+                    receiver?.onReceiveResult(getMatchedCookies(domain))
                 }
             }
         }
@@ -70,8 +59,11 @@ class InAppBrowserActivity : AppCompatActivity() {
                     domain = domain.substring(1)
                 }
 
-                val browserCookies = cookies[domain] ?: JSONObject()
-                receiver?.onReceiveResult(browserCookies)
+                if (domain != null) {
+                    receiver?.onReceiveResult(getMatchedCookies(domain))
+                } else {
+                    receiver?.onReceiveResult(JSONObject())
+                }
             }
         }
     }
@@ -79,6 +71,21 @@ class InAppBrowserActivity : AppCompatActivity() {
     private lateinit var geckoSession: GeckoSession
     private lateinit var geckoView: GeckoView
     private var cookies: MutableMap<String, JSONObject> = mutableMapOf()
+
+    private fun getMatchedCookies(domain: String): JSONObject {
+        val matchedCookies = JSONObject()
+        for ((cookieDomain, cookieObject) in cookies) {
+            val cleanDomain = cookieDomain.trimStart('.')
+            if (domain == cleanDomain || domain.endsWith(".$cleanDomain")) {
+                val keys = cookieObject.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    matchedCookies.put(key, cookieObject.get(key))
+                }
+            }
+        }
+        return matchedCookies
+    }
     private var htmlBody: String = ""
     private var currentUrl: String = ""
     private val visitedUrls = mutableListOf<String>()
@@ -153,7 +160,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setCustomView(closeButton, actionBarLayoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
-        val controller = OpacityCore.getRuntime().webExtensionController
         interceptExtensionEnabled = intent.getBooleanExtra("enableInterceptRequests", false)
 
         // Create shared message delegate for both extensions
@@ -176,27 +182,26 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                         "cookies" -> {
                             val receivedCookies = jsonMessage.getString("cookies")
-                            var domain = jsonMessage.getString("domain")
+                            val defaultDomain = jsonMessage.getString("domain")
 
                             val lines = receivedCookies.lines().filter { it.isNotBlank() }
 
                             val parsedCookies = lines.flatMap { HttpCookie.parse(it) }
-                            var cookieDict = JSONObject()
 
+                            val cookiesByDomain = mutableMapOf<String, JSONObject>()
                             for (cookie in parsedCookies) {
-                                val cookieDomain = cookie.domain
-
-                                if (cookieDomain != null) {
-                                    domain = cookieDomain
-                                }
+                                val cookieDomain = cookie.domain?.trimStart('.') ?: defaultDomain
+                                val cookieDict = cookiesByDomain.getOrPut(cookieDomain) { JSONObject() }
 
                                 cookieDict.put(cookie.name, cookie.value)
                             }
 
-                            cookies[domain] =
-                                cookies[domain]?.let { existingCookies ->
-                                    JsonUtils.mergeJsonObjects(existingCookies, cookieDict)
-                                } ?: cookieDict
+                            for ((domain, cookieDict) in cookiesByDomain) {
+                                cookies[domain] =
+                                    cookies[domain]?.let { existingCookies ->
+                                        JsonUtils.mergeJsonObjects(existingCookies, cookieDict)
+                                    } ?: cookieDict
+                            }
                         }       
 
                         "intercepted_request" -> {
@@ -221,18 +226,10 @@ class InAppBrowserActivity : AppCompatActivity() {
             }
         }
 
-        // Install main extension
-        controller.installBuiltIn("resource://android/assets/extension/")
-            .accept { ext ->
-                ext?.setMessageDelegate(sharedMessageDelegate, "gecko")
-            }
+        OpacityCore.setMainMessageDelegate(sharedMessageDelegate)
 
-        // Install intercept extension if enabled
         if (interceptExtensionEnabled) {
-            controller.installBuiltIn("resource://android/assets/interceptExtension/")
-                .accept { ext ->
-                    ext?.setMessageDelegate(sharedMessageDelegate, "gecko")
-                }
+            OpacityCore.setInterceptMessageDelegate(sharedMessageDelegate)
         }
 
         // Create GeckoSession only once
@@ -396,6 +393,9 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        OpacityCore.setMainMessageDelegate(null)
+        OpacityCore.setInterceptMessageDelegate(null)
+
         LocalBroadcastManager.getInstance(this).unregisterReceiver(closeReceiver)
         LocalBroadcastManager.getInstance(this).unregisterReceiver(cookiesForDomainRequestReceiver)
         LocalBroadcastManager.getInstance(this)

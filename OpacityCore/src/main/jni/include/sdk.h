@@ -19,7 +19,7 @@ typedef void (*IosPrepareRequestFn)(const char *);
 
 typedef void (*IosSetRequestHeaderFn)(const char *, const char *);
 
-typedef void (*IosPresentWebviewFn)(void);
+typedef void (*IosPresentWebviewFn)(bool);
 
 typedef void (*IosCloseWebviewFn)(void);
 
@@ -83,6 +83,68 @@ typedef const char *(*GetDeviceCpuFn)(void);
 
 typedef const char *(*GetDeviceCodenameFn)(void);
 
+typedef void (*IosWebviewChangeUrlFn)(const char*);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -105,11 +167,13 @@ extern const int32_t OPACITY_ENVIRONMENT_STAGING;
 
 extern const int32_t OPACITY_ENVIRONMENT_PRODUCTION;
 
-int32_t init(const char *api_key_str, bool dry_run, int32_t backend_environment,
-             bool show_errors_in_webview, char **error_ptr);
+int32_t opacity_init(const char *api_key_str,
+                     bool dry_run,
+                     int32_t backend_environment,
+                     bool show_errors_in_webview,
+                     char **error_ptr);
 
-int32_t get(const char *name, const char *params, char **res_ptr,
-            char **err_ptr);
+int32_t opacity_get(const char *name, const char *params, char **res_ptr, char **err_ptr);
 
 void free_string(char *ptr);
 
@@ -143,28 +207,41 @@ extern const char *android_get_device_codename(void);
 
 extern const char *get_ip_address(void);
 
-void register_ios_callbacks(
-    IosPrepareRequestFn ios_prepare_request,
-    IosSetRequestHeaderFn ios_set_request_header,
-    IosPresentWebviewFn ios_present_webview,
-    IosCloseWebviewFn ios_close_webview,
-    IosGetBrowserCookiesForCurrentUrlFn ios_get_browser_cookies_for_current_url,
-    IosGetBrowserCookiesForDomainFn ios_get_browser_cookies_for_domain,
-    GetIpAddressFn get_ip_address, GetBatteryLevelFn get_battery_level,
-    GetBatteryStatusFn get_battery_status, GetCarrierNameFn get_carrier_name,
-    GetCarrierMccFn get_carrier_mcc, GetCarrierMncFn get_carrier_mnc,
-    GetCourseFn get_course, GetCpuAbiFn get_cpu_abi, GetAltitudeFn get_altitude,
-    GetLatitudeFn get_latitude, GetLongitudeFn get_longitude,
-    GetDeviceModelFn get_device_model, GetOsNameFn get_os_name,
-    GetOsVersionFn get_os_version, IsEmulatorFn is_emulator,
-    GetHorizontalAccuracyFn get_horizontal_accuracy,
-    GetVerticalAccuracyFn get_vertical_accuracy,
-    IsLocationServicesEnabledFn is_location_services_enabled,
-    IsWifiConnectedFn is_wifi_connected, IsRootedFn is_rooted,
-    IsAppForeground is_app_foreground, GetDeviceLocaleFn get_device_locale,
-    GetScreenWidthFn get_screen_width, GetScreenHeightFn get_screen_height,
-    GetScreenDensityFn get_screen_density, GetScreenDpiFn get_screen_dpi,
-    GetDeviceCpuFn get_device_cpu, GetDeviceCodenameFn get_device_codename);
+void register_ios_callbacks(IosPrepareRequestFn ios_prepare_request,
+                            IosSetRequestHeaderFn ios_set_request_header,
+                            IosPresentWebviewFn ios_present_webview,
+                            IosCloseWebviewFn ios_close_webview,
+                            IosGetBrowserCookiesForCurrentUrlFn ios_get_browser_cookies_for_current_url,
+                            IosGetBrowserCookiesForDomainFn ios_get_browser_cookies_for_domain,
+                            GetIpAddressFn get_ip_address,
+                            GetBatteryLevelFn get_battery_level,
+                            GetBatteryStatusFn get_battery_status,
+                            GetCarrierNameFn get_carrier_name,
+                            GetCarrierMccFn get_carrier_mcc,
+                            GetCarrierMncFn get_carrier_mnc,
+                            GetCourseFn get_course,
+                            GetCpuAbiFn get_cpu_abi,
+                            GetAltitudeFn get_altitude,
+                            GetLatitudeFn get_latitude,
+                            GetLongitudeFn get_longitude,
+                            GetDeviceModelFn get_device_model,
+                            GetOsNameFn get_os_name,
+                            GetOsVersionFn get_os_version,
+                            IsEmulatorFn is_emulator,
+                            GetHorizontalAccuracyFn get_horizontal_accuracy,
+                            GetVerticalAccuracyFn get_vertical_accuracy,
+                            IsLocationServicesEnabledFn is_location_services_enabled,
+                            IsWifiConnectedFn is_wifi_connected,
+                            IsRootedFn is_rooted,
+                            IsAppForeground is_app_foreground,
+                            GetDeviceLocaleFn get_device_locale,
+                            GetScreenWidthFn get_screen_width,
+                            GetScreenHeightFn get_screen_height,
+                            GetScreenDensityFn get_screen_density,
+                            GetScreenDpiFn get_screen_dpi,
+                            GetDeviceCpuFn get_device_cpu,
+                            GetDeviceCodenameFn get_device_codename,
+                            IosWebviewChangeUrlFn ios_webview_change_url);
 
 extern void secure_set(const char *key, const char *value);
 
@@ -174,13 +251,15 @@ extern void android_prepare_request(const char *url);
 
 extern void android_set_request_header(const char *key, const char *value);
 
-extern void android_present_webview(bool intercept_requests);
+extern void android_present_webview(bool should_intercept);
 
 extern void android_close_webview(void);
 
 extern const char *android_get_browser_cookies_for_current_url(void);
 
 extern const char *android_get_browser_cookies_for_domain(const char *domain);
+
+extern void android_webview_change_url(const char *url);
 
 #ifdef __cplusplus
 } // extern "C"
