@@ -33,7 +33,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.opacitylabs.opacitycore.InAppBrowserActivity"
+            android:name="com.opacitylabs.opacitycore.WebViewBrowserActivity"
+            android:theme="@style/Theme.AppCompat.DayNight" />
+        <activity
+            android:name="com.opacitylabs.opacitycore.GeckoViewBrowserActivity"
             android:theme="@style/Theme.AppCompat.DayNight" />
                     <provider
             android:name="androidx.core.content.FileProvider"
