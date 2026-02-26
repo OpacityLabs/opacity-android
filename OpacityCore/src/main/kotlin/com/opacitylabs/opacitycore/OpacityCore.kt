@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
 import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
@@ -27,8 +28,8 @@ object OpacityCore {
     private lateinit var cryptoManager: CryptoManager
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
-    private lateinit var sRuntime: GeckoRuntime
     private var isBrowserActive = false
+    private var sRuntime: GeckoRuntime? = null
     private var mainExtension: WebExtension? = null
     private var interceptExtension: WebExtension? = null
     private var extensionsInstalled = false
@@ -52,21 +53,23 @@ object OpacityCore {
     @JvmStatic
     fun setContext(context: Context) {
         appContext = context
-        // Only create GeckoRuntime if it hasn't been created yet
-        if (!::sRuntime.isInitialized) {
+        cryptoManager = CryptoManager(appContext.applicationContext)
+    }
+
+    fun getRuntime(): GeckoRuntime {
+        if (sRuntime == null) {
             sRuntime = GeckoRuntime.create(appContext.applicationContext)
-            // Install extensions once when runtime is created
             installExtensions()
         }
-        cryptoManager = CryptoManager(appContext.applicationContext)
+        return sRuntime!!
     }
 
     private fun installExtensions() {
         if (extensionsInstalled) return
+        val runtime = sRuntime ?: return
 
-        val controller = sRuntime.webExtensionController
+        val controller = runtime.webExtensionController
 
-        // For cookies
         controller.installBuiltIn("resource://android/assets/extension/")
             .accept(
                 { ext ->
@@ -76,13 +79,10 @@ object OpacityCore {
                     }
                 },
                 { e ->
-                    android.util.Log.e("OpacityCore", "Failed to install main extension", e)
+                    Log.e("OpacityCore", "Failed to install main extension", e)
                 }
             )
 
-        extensionsInstalled = true
-
-        // For intercepting browser requests
         controller.installBuiltIn("resource://android/assets/interceptExtension/")
             .accept(
                 { ext ->
@@ -92,13 +92,12 @@ object OpacityCore {
                     }
                 },
                 { e ->
-                    android.util.Log.e("OpacityCore", "Failed to install intercept extension", e)
+                    Log.e("OpacityCore", "Failed to install intercept extension", e)
                 }
             )
-    }
 
-    fun getMainExtension(): WebExtension? = mainExtension
-    fun getInterceptExtension(): WebExtension? = interceptExtension
+        extensionsInstalled = true
+    }
 
     fun setMainMessageDelegate(delegate: WebExtension.MessageDelegate?) {
         pendingMainMessageDelegate = delegate
@@ -108,13 +107,6 @@ object OpacityCore {
     fun setInterceptMessageDelegate(delegate: WebExtension.MessageDelegate?) {
         pendingInterceptMessageDelegate = delegate
         interceptExtension?.setMessageDelegate(delegate, "gecko")
-    }
-
-    fun getRuntime(): GeckoRuntime {
-        if (!::sRuntime.isInitialized) {
-            throw IllegalStateException("GeckoRuntime is not initialized. Call initialize() first.")
-        }
-        return sRuntime
     }
 
     fun isAppForegrounded(): Boolean {
@@ -199,8 +191,13 @@ object OpacityCore {
         headers.putString(key.lowercase(), value)
     }
 
-    fun presentBrowser(shouldIntercept: Boolean) {
-        val intent = Intent(appContext, InAppBrowserActivity::class.java)
+    fun presentBrowser(shouldIntercept: Boolean, androidUseSystemWebView: Boolean = false) {
+        val activityClass = if (androidUseSystemWebView) {
+            WebViewBrowserActivity::class.java
+        } else {
+            GeckoViewBrowserActivity::class.java
+        }
+        val intent = Intent(appContext, activityClass)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         intent.putExtra("enableInterceptRequests", shouldIntercept)

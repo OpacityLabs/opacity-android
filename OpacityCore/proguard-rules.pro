@@ -14,8 +14,10 @@
 -keep class com.opacitylabs.opacitycore.OpacityResponse { *; }
 -keep class com.opacitylabs.opacitycore.OpacityError { *; }
 
-# Keep the InAppBrowserActivity as it's referenced by string name
--keep class com.opacitylabs.opacitycore.InAppBrowserActivity { *; }
+# Keep browser activity classes
+-keep class com.opacitylabs.opacitycore.BaseBrowserActivity { *; }
+-keep class com.opacitylabs.opacitycore.WebViewBrowserActivity { *; }
+-keep class com.opacitylabs.opacitycore.GeckoViewBrowserActivity { *; }
 
 # Keep utility classes
 -keep class com.opacitylabs.opacitycore.JsonUtils { *; }
@@ -64,7 +66,15 @@
 -keep class * extends android.content.BroadcastReceiver
 -keep class * extends android.os.Parcelable
 
-# Keep GeckoView related classes (since you use Mozilla GeckoView)
+# Keep WebView JavascriptInterface methods
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Keep the OpacityJsBridge inner class
+-keep class com.opacitylabs.opacitycore.WebViewBrowserActivity$OpacityJsBridge { *; }
+
+# Keep GeckoView classes
 -keep class org.mozilla.geckoview.** { *; }
 -dontwarn org.mozilla.geckoview.**
 
