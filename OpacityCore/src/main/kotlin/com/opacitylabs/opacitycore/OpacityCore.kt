@@ -62,13 +62,15 @@ object OpacityCore {
     fun setContext(context: Context) {
         appContext = context
         cryptoManager = CryptoManager(appContext.applicationContext)
-    }
-
-    fun getRuntime(): GeckoRuntime {
+        // Initialize GeckoRuntime eagerly so its lifecycle observer is
+        // registered before any activity reaches RESUMED state.
         if (sRuntime == null) {
             sRuntime = GeckoRuntime.create(appContext.applicationContext)
             installExtensions()
         }
+    }
+
+    fun getRuntime(): GeckoRuntime {
         return sRuntime!!
     }
 

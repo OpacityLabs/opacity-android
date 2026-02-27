@@ -65,10 +65,10 @@ class UITests {
         // Perform click
         composeTestRule.onNodeWithText("Test flow always succeeds").performClick()
 
-        // Wait for InAppBrowserActivity to be dismissed
+        // Wait for GeckoViewBrowserActivity to be dismissed
         waitForActivityToFinish(
-            com.opacitylabs.opacitycore.InAppBrowserActivity::class.java,
-            timeoutMillis = 30000
+            com.opacitylabs.opacitycore.GeckoViewBrowserActivity::class.java,
+            timeoutMillis = 30_000L
         )
 
         Thread.sleep(10000)
