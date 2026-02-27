@@ -54,11 +54,13 @@ object OpacityCore {
     fun setContext(context: Context) {
         appContext = context
         cryptoManager = CryptoManager(appContext.applicationContext)
+        if (sRuntime == null) {
+            sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        }
     }
 
     fun getRuntime(): GeckoRuntime {
-        if (sRuntime == null) {
-            sRuntime = GeckoRuntime.create(appContext.applicationContext)
+        if (!extensionsInstalled) {
             installExtensions()
         }
         return sRuntime!!
