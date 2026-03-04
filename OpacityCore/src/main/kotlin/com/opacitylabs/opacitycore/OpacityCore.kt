@@ -28,6 +28,7 @@ object OpacityCore {
     private lateinit var cryptoManager: CryptoManager
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
+    private var pendingCookies: MutableList<Pair<String, String>> = mutableListOf()
     private var isBrowserActive = false
     private var sRuntime: GeckoRuntime? = null
     private var mainExtension: WebExtension? = null
@@ -184,11 +185,16 @@ object OpacityCore {
 
     fun prepareInAppBrowser(url: String) {
         headers = Bundle()
+        pendingCookies = mutableListOf()
         _url = url
     }
 
     fun setBrowserHeader(key: String, value: String) {
         headers.putString(key.lowercase(), value)
+    }
+
+    fun setBrowserCookie(url: String, value: String) {
+        pendingCookies.add(Pair(url, value))
     }
 
     fun presentBrowser(shouldIntercept: Boolean, androidUseSystemWebView: Boolean = false) {
@@ -201,6 +207,12 @@ object OpacityCore {
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         intent.putExtra("enableInterceptRequests", shouldIntercept)
+        if (pendingCookies.isNotEmpty()) {
+            val cookieUrls = pendingCookies.map { it.first }.toTypedArray()
+            val cookieValues = pendingCookies.map { it.second }.toTypedArray()
+            intent.putExtra("cookieUrls", cookieUrls)
+            intent.putExtra("cookieValues", cookieValues)
+        }
         appContext.startActivity(intent)
         isBrowserActive = true
     }

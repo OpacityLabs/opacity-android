@@ -147,6 +147,19 @@ extern "C" void android_present_webview(bool shouldIntercept, bool androidUseSys
   env->CallVoidMethod(java_object, method, jshouldIntercept, jandroidUseSystemWebView);
 }
 
+extern "C" void android_set_cookie(const char *url, const char *value) {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+
+  jmethodID method =
+      env->GetMethodID(jOpacityCore, "setBrowserCookie",
+                       "(Ljava/lang/String;Ljava/lang/String;)V");
+
+  jstring jurl = env->NewStringUTF(url);
+  jstring jvalue = env->NewStringUTF(value);
+  env->CallVoidMethod(java_object, method, jurl, jvalue);
+}
+
 extern "C" void android_webview_change_url(const char *url) {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class

@@ -250,7 +250,9 @@ extern void android_prepare_request(const char *url);
 
 extern void android_set_request_header(const char *key, const char *value);
 
-extern void android_present_webview(bool should_intercept, bool android_use_system_webview);
+extern void android_set_cookie(const char *url, const char *value);
+
+extern void android_present_webview(bool should_intercept);
 
 extern void android_close_webview(void);
 
