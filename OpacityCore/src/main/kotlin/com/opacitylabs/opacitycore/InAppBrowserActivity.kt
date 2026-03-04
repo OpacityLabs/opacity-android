@@ -104,12 +104,10 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /**
      * Bridge object exposed to JavaScript as `window.OpacityNative`.
-     * JS calls OpacityNative.onInterceptedRequest(json) directly — no extension messaging needed.
      */
     inner class OpacityJsBridge {
         @JavascriptInterface
         fun onInterceptedRequest(json: String) {
-            // Log.d("Opacity SDK", "JS bridge onInterceptedRequest called, enabled=$interceptExtensionEnabled, json=${json.take(200)}")
             if (!interceptExtensionEnabled) return
             try {
                 val requestData = JSONObject(json)
@@ -199,12 +197,15 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
 
         //Uncomment to forward JS console messages to logcat for debugging
-        webView.webChromeClient = object : WebChromeClient() {
-            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                Log.d("Opacity SDK", "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}")
-                return true
-            }
-        }
+        // webView.webChromeClient = object : WebChromeClient() {
+        //     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+        //         Log.d(
+        //             "Opacity SDK",
+        //             "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
+        //         )
+        //         return true
+        //     }
+        // }
 
         val headers: Bundle? = intent.getBundleExtra("headers")
         val customUserAgent = headers?.getString("user-agent")
@@ -215,6 +216,20 @@ class InAppBrowserActivity : AppCompatActivity() {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
         webView.webViewClient = object : WebViewClient() {
+            /**
+            Uber breaks with the default webview because it automatically adds a X-Requested-With: header
+            which they detect, so we use this override which gives us the request before it's executed with
+            the option of executing it ourselves, which is where we can strip the header. This specific override
+            does not support POSTs as in there is no way to get the request body using this func, which is where
+            we use the INTERCEPT_SCRIPT to get the request body, send it back to kotlin, then we can start stripping,
+            the header for post requests also. for eg, it is needed for when we actually login (POST v2/submit-form)
+            to remove that header.
+
+            Similar to google signins, google have made it clear they do not want webviews to be logging in through OAuth
+            https://developers.googleblog.com/upcoming-security-changes-to-googles-oauth-20-authorization-endpoint-in-embedded-webviews/
+            They also check for the X-Requested-With header and the User-Agent, from testing they don't enforce the checks for any
+            of their POSTs, only GETs so we just intercept that.
+             */
             override fun shouldInterceptRequest(
                 view: WebView?,
                 request: WebResourceRequest?
@@ -228,14 +243,19 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                 // Only intercept Uber domains
                 val host = request.url?.host?.lowercase() ?: ""
-                if (!host.endsWith("uber.com")) return null
+                if (!host.endsWith("uber.com") && !host.endsWith("accounts.google.com/v3/signin")) return null
+
 
                 // For submit-form POST, use the stored body from JS
-                val isSubmitForm = request.method == "POST" && url.contains("auth.uber.com/v2/submit-form")
+                val isSubmitForm =
+                    request.method == "POST" && url.contains("auth.uber.com/v2/submit-form")
                 val storedBody = if (isSubmitForm) pendingPostBodies.remove(url) else null
                 if (request.method != "GET" && request.method != "HEAD" && !isSubmitForm) return null
                 if (isSubmitForm) {
-                    Log.d("Opacity SDK", "submit-form intercepted: storedBody=${if (storedBody != null) "${storedBody.length} bytes" else "MISSING"}")
+                    Log.d(
+                        "Opacity SDK",
+                        "submit-form intercepted: storedBody=${if (storedBody != null) "${storedBody.length} bytes" else "MISSING"}"
+                    )
                     if (storedBody == null) return null
                 }
 
@@ -252,7 +272,8 @@ class InAppBrowserActivity : AppCompatActivity() {
 
                     request.requestHeaders?.forEach { (key, value) ->
                         if (!key.equals("x-requested-with", ignoreCase = true) &&
-                            !key.equals("accept-encoding", ignoreCase = true)) {
+                            !key.equals("accept-encoding", ignoreCase = true)
+                        ) {
                             conn.setRequestProperty(key, value)
                         }
                     }
@@ -277,11 +298,17 @@ class InAppBrowserActivity : AppCompatActivity() {
                     }
 
                     val reasonPhrase = conn.responseMessage?.ifEmpty { "OK" } ?: "OK"
-                    val inputStream = try { conn.inputStream } catch (e: Exception) { conn.errorStream }
+                    val inputStream = try {
+                        conn.inputStream
+                    } catch (e: Exception) {
+                        conn.errorStream
+                    }
 
                     conn.headerFields?.forEach { (key, values) ->
                         if (key?.equals("Set-Cookie", ignoreCase = true) == true) {
-                            values.forEach { value -> CookieManager.getInstance().setCookie(url, value) }
+                            values.forEach { value ->
+                                CookieManager.getInstance().setCookie(url, value)
+                            }
                         }
                     }
 
@@ -290,7 +317,12 @@ class InAppBrowserActivity : AppCompatActivity() {
                     val charsetMatch = Regex("charset=([^;\\s]+)").find(contentType)
                     val charset = charsetMatch?.groupValues?.get(1)?.trim() ?: "UTF-8"
 
-                    val skipHeaders = setOf("content-encoding", "transfer-encoding", "content-length", "connection")
+                    val skipHeaders = setOf(
+                        "content-encoding",
+                        "transfer-encoding",
+                        "content-length",
+                        "connection"
+                    )
                     val responseHeaders = mutableMapOf<String, String>()
                     conn.headerFields?.forEach { (key, values) ->
                         if (key != null && values.isNotEmpty() && !skipHeaders.contains(key.lowercase())) {
@@ -298,7 +330,14 @@ class InAppBrowserActivity : AppCompatActivity() {
                         }
                     }
 
-                    return WebResourceResponse(mimeType, charset, responseCode, reasonPhrase, responseHeaders, inputStream)
+                    return WebResourceResponse(
+                        mimeType,
+                        charset,
+                        responseCode,
+                        reasonPhrase,
+                        responseHeaders,
+                        inputStream
+                    )
                 } catch (e: Exception) {
                     Log.e("Opacity SDK", "shouldInterceptRequest error for $url", e)
                     return null
@@ -326,9 +365,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                     currentUrl = url
                     addToVisitedUrls(url)
                 }
-                // Inject intercept script before page JS runs (bypasses CSP via evaluateJavascript)
+
                 if (interceptExtensionEnabled) {
-                    // Log.d("Opacity SDK", "Injecting intercept script into $url")
                     view?.evaluateJavascript(INTERCEPT_SCRIPT, null)
                 }
             }
@@ -340,7 +378,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                     updateCookiesFromCookieManager(url)
                 }
 
-                // Extract HTML body via evaluateJavascript
                 view?.evaluateJavascript("document.documentElement.outerHTML") { rawResult ->
                     if (rawResult != null && rawResult != "null") {
                         htmlBody = unescapeJsString(rawResult)
@@ -402,7 +439,19 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         val url = intent.getStringExtra("url")!!
 
-        // Build header map from the Bundle for loadUrl
+        // Inject cookies passed via intent extras
+        val cookieUrls = intent.getStringArrayExtra("cookieUrls")
+        val cookieValues = intent.getStringArrayExtra("cookieValues")
+        if (cookieUrls != null && cookieValues != null) {
+            val cookieManager = CookieManager.getInstance()
+            for (i in cookieUrls.indices) {
+                if (i < cookieValues.size) {
+                    cookieManager.setCookie(cookieUrls[i], cookieValues[i])
+                }
+            }
+            cookieManager.flush()
+        }
+
         val headerMap = mutableMapOf<String, String>()
         headers?.keySet()?.forEach { key ->
             if (key != "user-agent") {
@@ -546,40 +595,6 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     companion object {
-        /**
-         * Injected into Google sign-in pages to capture POST bodies
-         * so shouldInterceptRequest can forward them without x-requested-with.
-         */
-        private const val GOOGLE_OVERRIDE_SCRIPT = """
-(function() {
-  if (window.__googlePostCapture) return;
-  window.__googlePostCapture = true;
-  var _xOpen = XMLHttpRequest.prototype.open;
-  var _xSend = XMLHttpRequest.prototype.send;
-  var _xMeta = new WeakMap();
-  XMLHttpRequest.prototype.open = function(m, u) {
-    _xMeta.set(this, {m:m, u:u});
-    return _xOpen.apply(this, arguments);
-  };
-  XMLHttpRequest.prototype.send = function(body) {
-    var d = _xMeta.get(this);
-    if (d && d.m === 'POST' && body) {
-      try { OpacityNative.storePostBody(new URL(d.u, location.href).href, typeof body === 'string' ? body : String(body)); } catch(e) {}
-    }
-    return _xSend.apply(this, arguments);
-  };
-  var _f = window.fetch;
-  window.fetch = function(input, init) {
-    var m = (init && init.method) || 'GET';
-    var u = typeof input === 'string' ? input : input.url;
-    if (m === 'POST' && init && init.body) {
-      try { OpacityNative.storePostBody(new URL(u, location.href).href, typeof init.body === 'string' ? init.body : String(init.body)); } catch(e) {}
-    }
-    return _f.apply(this, arguments);
-  };
-})();
-"""
-
         private const val INTERCEPT_SCRIPT = """
 (function() {
     const log = (requestType, data) => { try { OpacityNative.onInterceptedRequest(JSON.stringify({ request_type: requestType, data })); } catch(e) {} };
@@ -643,11 +658,6 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     xhrProto.send = function(body) {
         const data = xhrData.get(this);
-        if (data && data.method && data.method.toUpperCase() === 'POST' && body && data.url.indexOf('/v2/submit-form') !== -1) {
-            var bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
-            var fullUrl = new URL(data.url, location.href).href;
-            try { OpacityNative.storePostBody(fullUrl, bodyStr); } catch(e) {}
-        }
         if (data) {
             log('xhr_request', { method: data.method, url: data.url, headers: data.headers, body });
             this.addEventListener('loadend', () => {
@@ -657,24 +667,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         return originalSend.apply(this, arguments);
     };
     wrappedFns.set(xhrProto.send, 'function send() { [native code] }');
-
-    Object.defineProperty(navigator, 'webdriver', { get: () => undefined, configurable: true });
-
-    const automationProps = ['__webdriver_script_fn', '__driver_evaluate', '__webdriver_evaluate',
-        '__selenium_evaluate', '__fxdriver_evaluate', '__driver_unwrapped', '__webdriver_unwrapped',
-        '__selenium_unwrapped', '__fxdriver_unwrapped', '_Selenium_IDE_Recorder', '_selenium',
-        'calledSelenium', '_WEBDRIVER_ELEM_CACHE', 'ChromeDriverw', 'driver-hierarchical',
-        '__nightmare', '__phantomas', '_phantom', 'phantom', 'callPhantom'];
-    automationProps.forEach(p => { try { Object.defineProperty(window, p, { get: () => undefined, configurable: true }); } catch(e) {} });
-
-    const OriginalError = Error;
-    Error = function(...args) {
-        const err = new OriginalError(...args);
-        if (err.stack) err.stack = err.stack.replace(/\n.*OpacityNative.*/g, '');
-        return err;
-    };
-    Error.prototype = OriginalError.prototype;
-    Object.setPrototypeOf(Error, OriginalError);
 })();
 """
     }

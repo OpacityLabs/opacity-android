@@ -25,6 +25,7 @@ object OpacityCore {
     private lateinit var cryptoManager: CryptoManager
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
+    private var pendingCookies: MutableList<Pair<String, String>> = mutableListOf()
     private var isBrowserActive = false
 
     init {
@@ -130,6 +131,7 @@ object OpacityCore {
 
     fun prepareInAppBrowser(url: String) {
         headers = Bundle()
+        pendingCookies = mutableListOf()
         _url = url
     }
 
@@ -137,11 +139,21 @@ object OpacityCore {
         headers.putString(key.lowercase(), value)
     }
 
+    fun setBrowserCookie(url: String, value: String) {
+        pendingCookies.add(Pair(url, value))
+    }
+
     fun presentBrowser(shouldIntercept: Boolean) {
         val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         intent.putExtra("enableInterceptRequests", shouldIntercept)
+        if (pendingCookies.isNotEmpty()) {
+            val cookieUrls = pendingCookies.map { it.first }.toTypedArray()
+            val cookieValues = pendingCookies.map { it.second }.toTypedArray()
+            intent.putExtra("cookieUrls", cookieUrls)
+            intent.putExtra("cookieValues", cookieValues)
+        }
         appContext.startActivity(intent)
         isBrowserActive = true
     }
