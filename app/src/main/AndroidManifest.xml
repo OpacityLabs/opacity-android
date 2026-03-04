@@ -32,10 +32,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.opacitylabs.opacitycore.WebViewBrowserActivity"
+            android:name="com.opacitylabs.opacitycore.InAppBrowserActivity"
             android:theme="@style/Theme.AppCompat.DayNight" />
-        <activity
-            android:name="com.opacitylabs.opacitycore.GeckoViewBrowserActivity"
-            android:theme="@style/Theme.AppCompat.DayNight" />
+                    <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+        </provider>
     </application>
 </manifest>

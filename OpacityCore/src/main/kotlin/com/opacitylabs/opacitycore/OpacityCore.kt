@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
 import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
@@ -13,8 +12,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
-import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.WebExtension
 
 object OpacityCore {
     enum class Environment(val code: Int) {
@@ -30,12 +27,6 @@ object OpacityCore {
     private var headers: Bundle = Bundle()
     private var pendingCookies: MutableList<Pair<String, String>> = mutableListOf()
     private var isBrowserActive = false
-    private var sRuntime: GeckoRuntime? = null
-    private var mainExtension: WebExtension? = null
-    private var interceptExtension: WebExtension? = null
-    private var extensionsInstalled = false
-    private var pendingMainMessageDelegate: WebExtension.MessageDelegate? = null
-    private var pendingInterceptMessageDelegate: WebExtension.MessageDelegate? = null
 
     init {
         System.loadLibrary("OpacityCore")
@@ -55,59 +46,6 @@ object OpacityCore {
     fun setContext(context: Context) {
         appContext = context
         cryptoManager = CryptoManager(appContext.applicationContext)
-        if (sRuntime == null) {
-            sRuntime = GeckoRuntime.create(appContext.applicationContext)
-            installExtensions()
-        }
-    }
-
-    fun getRuntime(): GeckoRuntime {
-        return sRuntime!!
-    }
-
-    private fun installExtensions() {
-        if (extensionsInstalled) return
-        val runtime = sRuntime ?: return
-
-        val controller = runtime.webExtensionController
-
-        controller.installBuiltIn("resource://android/assets/extension/")
-            .accept(
-                { ext ->
-                    mainExtension = ext
-                    pendingMainMessageDelegate?.let {
-                        ext?.setMessageDelegate(it, "gecko")
-                    }
-                },
-                { e ->
-                    Log.e("OpacityCore", "Failed to install main extension", e)
-                }
-            )
-
-        controller.installBuiltIn("resource://android/assets/interceptExtension/")
-            .accept(
-                { ext ->
-                    interceptExtension = ext
-                    pendingInterceptMessageDelegate?.let {
-                        ext?.setMessageDelegate(it, "gecko")
-                    }
-                },
-                { e ->
-                    Log.e("OpacityCore", "Failed to install intercept extension", e)
-                }
-            )
-
-        extensionsInstalled = true
-    }
-
-    fun setMainMessageDelegate(delegate: WebExtension.MessageDelegate?) {
-        pendingMainMessageDelegate = delegate
-        mainExtension?.setMessageDelegate(delegate, "gecko")
-    }
-
-    fun setInterceptMessageDelegate(delegate: WebExtension.MessageDelegate?) {
-        pendingInterceptMessageDelegate = delegate
-        interceptExtension?.setMessageDelegate(delegate, "gecko")
     }
 
     fun isAppForegrounded(): Boolean {
@@ -197,13 +135,8 @@ object OpacityCore {
         pendingCookies.add(Pair(url, value))
     }
 
-    fun presentBrowser(shouldIntercept: Boolean, androidUseSystemWebView: Boolean = false) {
-        val activityClass = if (androidUseSystemWebView) {
-            WebViewBrowserActivity::class.java
-        } else {
-            GeckoViewBrowserActivity::class.java
-        }
-        val intent = Intent(appContext, activityClass)
+    fun presentBrowser(shouldIntercept: Boolean) {
+        val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         intent.putExtra("enableInterceptRequests", shouldIntercept)
