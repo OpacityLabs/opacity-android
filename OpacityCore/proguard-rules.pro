@@ -14,10 +14,8 @@
 -keep class com.opacitylabs.opacitycore.OpacityResponse { *; }
 -keep class com.opacitylabs.opacitycore.OpacityError { *; }
 
-# Keep browser activity classes
--keep class com.opacitylabs.opacitycore.BaseBrowserActivity { *; }
--keep class com.opacitylabs.opacitycore.WebViewBrowserActivity { *; }
--keep class com.opacitylabs.opacitycore.GeckoViewBrowserActivity { *; }
+# Keep the InAppBrowserActivity as it's referenced by string name
+-keep class com.opacitylabs.opacitycore.InAppBrowserActivity { *; }
 
 # Keep utility classes
 -keep class com.opacitylabs.opacitycore.JsonUtils { *; }
@@ -72,11 +70,7 @@
 }
 
 # Keep the OpacityJsBridge inner class
--keep class com.opacitylabs.opacitycore.WebViewBrowserActivity$OpacityJsBridge { *; }
-
-# Keep GeckoView classes
--keep class org.mozilla.geckoview.** { *; }
--dontwarn org.mozilla.geckoview.**
+-keep class com.opacitylabs.opacitycore.InAppBrowserActivity$OpacityJsBridge { *; }
 
 # Keep security crypto classes
 -keep class androidx.security.crypto.** { *; }
