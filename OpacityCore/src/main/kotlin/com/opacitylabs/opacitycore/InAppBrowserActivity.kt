@@ -183,8 +183,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
         interceptExtensionEnabled = intent.getBooleanExtra("enableInterceptRequests", false)
-        Log.d("Opacity SDK", "hi interceptExtensionEnabled=$interceptExtensionEnabled")
-
         // Clear cookies for private-mode-like behavior
         CookieManager.getInstance().removeAllCookies(null)
         CookieManager.getInstance().setAcceptCookie(true)
