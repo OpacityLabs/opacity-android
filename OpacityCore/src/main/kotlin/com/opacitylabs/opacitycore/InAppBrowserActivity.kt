@@ -41,9 +41,13 @@ class InAppBrowserActivity : AppCompatActivity() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "com.opacitylabs.opacitycore.GET_COOKIES_FOR_CURRENT_URL") {
                     val receiver = intent.getParcelableExtra<CookieResultReceiver>("receiver")
-                    updateCookiesFromCookieManager(currentUrl)
-                    val domain = java.net.URL(currentUrl).host
-                    receiver?.onReceiveResult(getMatchedCookies(domain))
+                    if (currentUrl.isNotEmpty() && currentUrl.startsWith("http")) {
+                        updateCookiesFromCookieManager(currentUrl)
+                        val domain = java.net.URL(currentUrl).host
+                        receiver?.onReceiveResult(getMatchedCookies(domain))
+                    } else {
+                        receiver?.onReceiveResult(JSONObject())
+                    }
                 }
             }
         }
