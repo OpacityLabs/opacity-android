@@ -64,9 +64,13 @@
 -keep class * extends android.content.BroadcastReceiver
 -keep class * extends android.os.Parcelable
 
-# Keep GeckoView related classes (since you use Mozilla GeckoView)
--keep class org.mozilla.geckoview.** { *; }
--dontwarn org.mozilla.geckoview.**
+# Keep WebView JavascriptInterface methods
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Keep the OpacityJsBridge inner class
+-keep class com.opacitylabs.opacitycore.InAppBrowserActivity$OpacityJsBridge { *; }
 
 # Keep security crypto classes
 -keep class androidx.security.crypto.** { *; }

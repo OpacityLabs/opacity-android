@@ -12,8 +12,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
-import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.WebExtension
 
 object OpacityCore {
     enum class Environment(val code: Int) {
@@ -27,13 +25,8 @@ object OpacityCore {
     private lateinit var cryptoManager: CryptoManager
     private lateinit var _url: String
     private var headers: Bundle = Bundle()
-    private lateinit var sRuntime: GeckoRuntime
+    private var pendingCookies: MutableList<Pair<String, String>> = mutableListOf()
     private var isBrowserActive = false
-    private var mainExtension: WebExtension? = null
-    private var interceptExtension: WebExtension? = null
-    private var extensionsInstalled = false
-    private var pendingMainMessageDelegate: WebExtension.MessageDelegate? = null
-    private var pendingInterceptMessageDelegate: WebExtension.MessageDelegate? = null
 
     init {
         System.loadLibrary("OpacityCore")
@@ -52,69 +45,7 @@ object OpacityCore {
     @JvmStatic
     fun setContext(context: Context) {
         appContext = context
-        // Only create GeckoRuntime if it hasn't been created yet
-        if (!::sRuntime.isInitialized) {
-            sRuntime = GeckoRuntime.create(appContext.applicationContext)
-            // Install extensions once when runtime is created
-            installExtensions()
-        }
         cryptoManager = CryptoManager(appContext.applicationContext)
-    }
-
-    private fun installExtensions() {
-        if (extensionsInstalled) return
-
-        val controller = sRuntime.webExtensionController
-
-        // For cookies
-        controller.installBuiltIn("resource://android/assets/extension/")
-            .accept(
-                { ext ->
-                    mainExtension = ext
-                    pendingMainMessageDelegate?.let {
-                        ext?.setMessageDelegate(it, "gecko")
-                    }
-                },
-                { e ->
-                    android.util.Log.e("OpacityCore", "Failed to install main extension", e)
-                }
-            )
-
-        extensionsInstalled = true
-
-        // For intercepting browser requests
-        controller.installBuiltIn("resource://android/assets/interceptExtension/")
-            .accept(
-                { ext ->
-                    interceptExtension = ext
-                    pendingInterceptMessageDelegate?.let {
-                        ext?.setMessageDelegate(it, "gecko")
-                    }
-                },
-                { e ->
-                    android.util.Log.e("OpacityCore", "Failed to install intercept extension", e)
-                }
-            )
-    }
-
-    fun getMainExtension(): WebExtension? = mainExtension
-    fun getInterceptExtension(): WebExtension? = interceptExtension
-
-    fun setMainMessageDelegate(delegate: WebExtension.MessageDelegate?) {
-        pendingMainMessageDelegate = delegate
-        mainExtension?.setMessageDelegate(delegate, "gecko")
-    }
-
-    fun setInterceptMessageDelegate(delegate: WebExtension.MessageDelegate?) {
-        pendingInterceptMessageDelegate = delegate
-        interceptExtension?.setMessageDelegate(delegate, "gecko")
-    }
-
-    fun getRuntime(): GeckoRuntime {
-        if (!::sRuntime.isInitialized) {
-            throw IllegalStateException("GeckoRuntime is not initialized. Call initialize() first.")
-        }
-        return sRuntime
     }
 
     fun isAppForegrounded(): Boolean {
@@ -192,6 +123,7 @@ object OpacityCore {
 
     fun prepareInAppBrowser(url: String) {
         headers = Bundle()
+        pendingCookies = mutableListOf()
         _url = url
     }
 
@@ -199,11 +131,21 @@ object OpacityCore {
         headers.putString(key.lowercase(), value)
     }
 
+    fun setBrowserCookie(url: String, value: String) {
+        pendingCookies.add(Pair(url, value))
+    }
+
     fun presentBrowser(shouldIntercept: Boolean) {
         val intent = Intent(appContext, InAppBrowserActivity::class.java)
         intent.putExtra("url", _url)
         intent.putExtra("headers", headers)
         intent.putExtra("enableInterceptRequests", shouldIntercept)
+        if (pendingCookies.isNotEmpty()) {
+            val cookieUrls = pendingCookies.map { it.first }.toTypedArray()
+            val cookieValues = pendingCookies.map { it.second }.toTypedArray()
+            intent.putExtra("cookieUrls", cookieUrls)
+            intent.putExtra("cookieValues", cookieValues)
+        }
         appContext.startActivity(intent)
         isBrowserActive = true
     }
