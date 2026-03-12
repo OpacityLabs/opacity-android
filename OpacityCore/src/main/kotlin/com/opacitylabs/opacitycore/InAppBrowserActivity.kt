@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup
@@ -126,6 +128,11 @@ class InAppBrowserActivity : AppCompatActivity() {
             Log.d("Opacity SDK", "storePostBody: url=$url (${body.length} bytes)")
             pendingPostBodies[url] = body
         }
+
+        @JavascriptInterface
+        fun notifyEvalResult(id: String, json: String) {
+            OpacityCore.notifyWebViewEvalResult(id, json)
+        }
     }
 
     @SuppressLint("WrongThread", "SetJavaScriptEnabled")
@@ -182,6 +189,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         supportActionBar?.setCustomView(closeButton, actionBarLayoutParams)
         supportActionBar?.setDisplayShowCustomEnabled(true)
 
+        OpacityCore.setActiveWebViewActivity(this)
         interceptExtensionEnabled = intent.getBooleanExtra("enableInterceptRequests", false)
         // Clear cookies for private-mode-like behavior
         CookieManager.getInstance().removeAllCookies(null)
@@ -593,7 +601,34 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         CookieManager.getInstance().removeAllCookies(null)
         webView.destroy()
+        OpacityCore.setActiveWebViewActivity(null)
         OpacityCore.onBrowserDestroyed()
+    }
+
+    /**
+     * Injects [js] into the standard WebView as an AsyncFunction (mirrors the GeckoView eval
+     * extension behaviour). When [fireAndForget] is false the result is delivered back via
+     * [OpacityJsBridge.notifyEvalResult] → [OpacityCore.notifyWebViewEvalResult].
+     */
+    fun dispatchWebViewEval(id: String, js: String, fireAndForget: Boolean) {
+        val escapedJs = org.json.JSONObject.quote(js)
+        val wrappedJs = if (fireAndForget) {
+            "(function(){var AF=Object.getPrototypeOf(async function(){}).constructor;new AF($escapedJs)();})()"
+        } else {
+            val escapedId = org.json.JSONObject.quote(id)
+            "(function(){" +
+                "var AF=Object.getPrototypeOf(async function(){}).constructor;" +
+                "new AF($escapedJs)().then(function(__r){" +
+                    "var __val=(__r!==undefined&&__r!==null)?__r:null;" +
+                    "OpacityNative.notifyEvalResult($escapedId,JSON.stringify({result:__val}));" +
+                "}).catch(function(e){" +
+                    "OpacityNative.notifyEvalResult($escapedId,JSON.stringify({error:String(e)}));" +
+                "});" +
+            "})()"
+        }
+        Handler(Looper.getMainLooper()).post {
+            webView.evaluateJavascript(wrappedJs, null)
+        }
     }
 
     companion object {

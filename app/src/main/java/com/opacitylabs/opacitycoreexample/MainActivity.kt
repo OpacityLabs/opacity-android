@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
         requireNotNull(opacityApiKey) { "Opacity API key is null" }
 
         OpacityCore.setContext(this)
-        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+        OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.LOCAL, false)
 
         Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
 
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
                                         OpacityCore.initialize(
                                             opacityApiKey,
                                             false,
-                                            OpacityCore.Environment.PRODUCTION,
+                                            OpacityCore.Environment.LOCAL,
                                             true
                                         )
                                         Log.d("MainActivity", "Opacity SDK re-initialized")

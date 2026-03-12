@@ -376,6 +376,27 @@ extern "C" const char *android_get_browser_cookies_for_current_url() {
   return val_str;
 }
 
+extern "C" const char *android_eval_js(const char *js,
+                                       double timeout_in_seconds) {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(
+      jOpacityCore, "evalJs", "(Ljava/lang/String;J)Ljava/lang/String;");
+  jstring jjs = env->NewStringUTF(js);
+  jlong timeout_ms = (jlong)(timeout_in_seconds * 1000.0);
+  auto result =
+      (jstring)env->CallObjectMethod(java_object, method, jjs, timeout_ms);
+  env->DeleteLocalRef(jjs);
+  if (result == nullptr) {
+    return strdup("{\"result\":null}");
+  }
+  const char *str = env->GetStringUTFChars(result, nullptr);
+  char *copy = strdup(str);
+  env->ReleaseStringUTFChars(result, str);
+  env->DeleteLocalRef(result);
+  return copy;
+}
+
 extern "C" const char *
 android_get_browser_cookies_for_domain(const char *domain) {
   JNIEnv *env = GetJniEnv();
