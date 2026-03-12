@@ -113,6 +113,18 @@ object OpacityCore {
         return Build.DEVICE
     }
 
+    fun getBootloader(): String {
+        return Build.BOOTLOADER
+    }
+
+    fun getRadio(): String {
+        return Build.getRadioVersion() ?: ""
+    }
+
+    fun getBuildTime(): String {
+        return Build.TIME.toString()
+    }
+
     fun securelySet(key: String, value: String) {
         cryptoManager.set(key, value)
     }
