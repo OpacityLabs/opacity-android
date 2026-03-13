@@ -347,6 +347,54 @@ extern "C" const char *android_get_device_codename() {
   return result;
 }
 
+extern "C" const char *android_get_bootloader() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getBootloader",
+                                      "()Ljava/lang/String;");
+  jstring jBootloader = (jstring)env->CallObjectMethod(java_object, method);
+  if (jBootloader == nullptr) {
+    return strdup("");
+  }
+  const char *bootloader = env->GetStringUTFChars(jBootloader, nullptr);
+  char *result = strdup(bootloader);
+  env->ReleaseStringUTFChars(jBootloader, bootloader);
+  env->DeleteLocalRef(jBootloader);
+  return result;
+}
+
+extern "C" const char *android_get_radio() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getRadio",
+                                      "()Ljava/lang/String;");
+  jstring jRadio = (jstring)env->CallObjectMethod(java_object, method);
+  if (jRadio == nullptr) {
+    return strdup("");
+  }
+  const char *radio = env->GetStringUTFChars(jRadio, nullptr);
+  char *result = strdup(radio);
+  env->ReleaseStringUTFChars(jRadio, radio);
+  env->DeleteLocalRef(jRadio);
+  return result;
+}
+
+extern "C" const char *android_get_build_time() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getBuildTime",
+                                      "()Ljava/lang/String;");
+  jstring jBuildTime = (jstring)env->CallObjectMethod(java_object, method);
+  if (jBuildTime == nullptr) {
+    return strdup("");
+  }
+  const char *buildTime = env->GetStringUTFChars(jBuildTime, nullptr);
+  char *result = strdup(buildTime);
+  env->ReleaseStringUTFChars(jBuildTime, buildTime);
+  env->DeleteLocalRef(jBuildTime);
+  return result;
+}
+
 extern "C" void android_close_webview() {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class

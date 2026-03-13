@@ -18,6 +18,8 @@ typedef void (*IosPrepareRequestFn)(const char*);
 
 typedef void (*IosSetRequestHeaderFn)(const char*, const char*);
 
+typedef void (*IosSetCookieFn)(const char*, const char*);
+
 typedef void (*IosPresentWebviewFn)(bool);
 
 typedef void (*IosCloseWebviewFn)(void);
@@ -206,10 +208,17 @@ extern const char *android_get_device_cpu(void);
 
 extern const char *android_get_device_codename(void);
 
+extern const char *android_get_bootloader(void);
+
+extern const char *android_get_radio(void);
+
+extern const char *android_get_build_time(void);
+
 extern const char *get_ip_address(void);
 
 void register_ios_callbacks(IosPrepareRequestFn ios_prepare_request,
                             IosSetRequestHeaderFn ios_set_request_header,
+                            IosSetCookieFn ios_set_cookie,
                             IosPresentWebviewFn ios_present_webview,
                             IosCloseWebviewFn ios_close_webview,
                             IosGetBrowserCookiesForCurrentUrlFn ios_get_browser_cookies_for_current_url,
