@@ -19,6 +19,8 @@ typedef void (*IosPrepareRequestFn)(const char *);
 
 typedef void (*IosSetRequestHeaderFn)(const char *, const char *);
 
+typedef void (*IosSetCookieFn)(const char*, const char*);
+
 typedef void (*IosPresentWebviewFn)(bool);
 
 typedef void (*IosCloseWebviewFn)(void);
@@ -84,6 +86,8 @@ typedef const char *(*GetDeviceCpuFn)(void);
 typedef const char *(*GetDeviceCodenameFn)(void);
 
 typedef void (*IosWebviewChangeUrlFn)(const char*);
+
+typedef const char *(*IosEvalJsFn)(const char*, double);
 
 
 
@@ -205,10 +209,17 @@ extern const char *android_get_device_cpu(void);
 
 extern const char *android_get_device_codename(void);
 
+extern const char *android_get_bootloader(void);
+
+extern const char *android_get_radio(void);
+
+extern const char *android_get_build_time(void);
+
 extern const char *get_ip_address(void);
 
 void register_ios_callbacks(IosPrepareRequestFn ios_prepare_request,
                             IosSetRequestHeaderFn ios_set_request_header,
+                            IosSetCookieFn ios_set_cookie,
                             IosPresentWebviewFn ios_present_webview,
                             IosCloseWebviewFn ios_close_webview,
                             IosGetBrowserCookiesForCurrentUrlFn ios_get_browser_cookies_for_current_url,
@@ -241,7 +252,8 @@ void register_ios_callbacks(IosPrepareRequestFn ios_prepare_request,
                             GetScreenDpiFn get_screen_dpi,
                             GetDeviceCpuFn get_device_cpu,
                             GetDeviceCodenameFn get_device_codename,
-                            IosWebviewChangeUrlFn ios_webview_change_url);
+                            IosWebviewChangeUrlFn ios_webview_change_url,
+                            IosEvalJsFn ios_eval_js);
 
 extern void secure_set(const char *key, const char *value);
 
@@ -262,6 +274,8 @@ extern const char *android_get_browser_cookies_for_current_url(void);
 extern const char *android_get_browser_cookies_for_domain(const char *domain);
 
 extern void android_webview_change_url(const char *url);
+
+extern const char *android_eval_js(const char *js, double timeout_in_seconds);
 
 #ifdef __cplusplus
 } // extern "C"

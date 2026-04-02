@@ -136,19 +136,6 @@ extern "C" void android_set_request_header(const char *key, const char *value) {
   env->CallVoidMethod(java_object, method, jkey, jvalue);
 }
 
-extern "C" void android_set_cookie(const char *url, const char *value) {
-  JNIEnv *env = GetJniEnv();
-  jclass jOpacityCore = env->GetObjectClass(java_object);
-
-  jmethodID method =
-      env->GetMethodID(jOpacityCore, "setBrowserCookie",
-                       "(Ljava/lang/String;Ljava/lang/String;)V");
-
-  jstring jurl = env->NewStringUTF(url);
-  jstring jvalue = env->NewStringUTF(value);
-  env->CallVoidMethod(java_object, method, jurl, jvalue);
-}
-
 extern "C" void android_present_webview(bool shouldIntercept) {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
@@ -160,6 +147,19 @@ extern "C" void android_present_webview(bool shouldIntercept) {
   // Call the method with the necessary parameters
   jboolean jshouldIntercept = shouldIntercept ? JNI_TRUE : JNI_FALSE;
   env->CallVoidMethod(java_object, method, jshouldIntercept);
+}
+
+extern "C" void android_set_cookie(const char *url, const char *value) {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+
+  jmethodID method =
+      env->GetMethodID(jOpacityCore, "setBrowserCookie",
+                       "(Ljava/lang/String;Ljava/lang/String;)V");
+
+  jstring jurl = env->NewStringUTF(url);
+  jstring jvalue = env->NewStringUTF(value);
+  env->CallVoidMethod(java_object, method, jurl, jvalue);
 }
 
 extern "C" void android_webview_change_url(const char *url) {
@@ -347,6 +347,54 @@ extern "C" const char *android_get_device_codename() {
   return result;
 }
 
+extern "C" const char *android_get_bootloader() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getBootloader",
+                                      "()Ljava/lang/String;");
+  jstring jBootloader = (jstring)env->CallObjectMethod(java_object, method);
+  if (jBootloader == nullptr) {
+    return strdup("");
+  }
+  const char *bootloader = env->GetStringUTFChars(jBootloader, nullptr);
+  char *result = strdup(bootloader);
+  env->ReleaseStringUTFChars(jBootloader, bootloader);
+  env->DeleteLocalRef(jBootloader);
+  return result;
+}
+
+extern "C" const char *android_get_radio() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getRadio",
+                                      "()Ljava/lang/String;");
+  jstring jRadio = (jstring)env->CallObjectMethod(java_object, method);
+  if (jRadio == nullptr) {
+    return strdup("");
+  }
+  const char *radio = env->GetStringUTFChars(jRadio, nullptr);
+  char *result = strdup(radio);
+  env->ReleaseStringUTFChars(jRadio, radio);
+  env->DeleteLocalRef(jRadio);
+  return result;
+}
+
+extern "C" const char *android_get_build_time() {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(jOpacityCore, "getBuildTime",
+                                      "()Ljava/lang/String;");
+  jstring jBuildTime = (jstring)env->CallObjectMethod(java_object, method);
+  if (jBuildTime == nullptr) {
+    return strdup("");
+  }
+  const char *buildTime = env->GetStringUTFChars(jBuildTime, nullptr);
+  char *result = strdup(buildTime);
+  env->ReleaseStringUTFChars(jBuildTime, buildTime);
+  env->DeleteLocalRef(jBuildTime);
+  return result;
+}
+
 extern "C" void android_close_webview() {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
@@ -374,6 +422,27 @@ extern "C" const char *android_get_browser_cookies_for_current_url() {
 
   const char *val_str = env->GetStringUTFChars(res, nullptr);
   return val_str;
+}
+
+extern "C" const char *android_eval_js(const char *js,
+                                       double timeout_in_seconds) {
+  JNIEnv *env = GetJniEnv();
+  jclass jOpacityCore = env->GetObjectClass(java_object);
+  jmethodID method = env->GetMethodID(
+      jOpacityCore, "evalJs", "(Ljava/lang/String;J)Ljava/lang/String;");
+  jstring jjs = env->NewStringUTF(js);
+  jlong timeout_ms = (jlong)(timeout_in_seconds * 1000.0);
+  auto result =
+      (jstring)env->CallObjectMethod(java_object, method, jjs, timeout_ms);
+  env->DeleteLocalRef(jjs);
+  if (result == nullptr) {
+    return strdup("{\"result\":null}");
+  }
+  const char *str = env->GetStringUTFChars(result, nullptr);
+  char *copy = strdup(str);
+  env->ReleaseStringUTFChars(result, str);
+  env->DeleteLocalRef(result);
+  return copy;
 }
 
 extern "C" const char *

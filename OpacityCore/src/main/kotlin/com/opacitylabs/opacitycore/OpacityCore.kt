@@ -4,7 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import com.opacitylabs.opacitycore.JsonConverter.Companion.mapToJsonElement
 import com.opacitylabs.opacitycore.JsonConverter.Companion.parseJsonElementToAny
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +33,16 @@ object OpacityCore {
     private var headers: Bundle = Bundle()
     private var pendingCookies: MutableList<Pair<String, String>> = mutableListOf()
     private var isBrowserActive = false
+
+    // --- eval state ---
+    private val pendingEvals = ConcurrentHashMap<String, PendingEval>()
+    private val evalIdCounter = AtomicInteger(0)
+    private var activeWebViewActivity: java.lang.ref.WeakReference<InAppBrowserActivity>? = null
+
+    private data class PendingEval(
+        val latch: CountDownLatch = CountDownLatch(1),
+        var result: String = "{\"result\":null}"
+    )
 
     init {
         // Load our wrapper library first, which contains the secure_set implementation
@@ -121,6 +137,18 @@ object OpacityCore {
         return Build.DEVICE
     }
 
+    fun getBootloader(): String {
+        return Build.BOOTLOADER
+    }
+
+    fun getRadio(): String {
+        return Build.getRadioVersion() ?: ""
+    }
+
+    fun getBuildTime(): String {
+        return Build.TIME.toString()
+    }
+
     fun securelySet(key: String, value: String) {
         cryptoManager.set(key, value)
     }
@@ -198,6 +226,37 @@ object OpacityCore {
 
     fun onBrowserDestroyed() {
         isBrowserActive = false
+    }
+
+    fun setActiveWebViewActivity(activity: InAppBrowserActivity?) {
+        activeWebViewActivity = activity?.let { java.lang.ref.WeakReference(it) }
+    }
+
+    fun notifyWebViewEvalResult(id: String, json: String) {
+        val pending = pendingEvals[id] ?: return
+        pending.result = json
+        pending.latch.countDown()
+    }
+
+    fun evalJs(js: String, timeoutMs: Long): String {
+        val activity = activeWebViewActivity?.get()
+        if (activity == null || activity.isFinishing || activity.isDestroyed) {
+            return "{\"error\":\"no active webview\"}"
+        }
+
+        val id = "eval_${evalIdCounter.incrementAndGet()}"
+
+        if (timeoutMs == 0L) {
+            activity.dispatchWebViewEval(id, js, fireAndForget = true)
+            return "{\"result\":null}"
+        }
+
+        val pending = PendingEval()
+        pendingEvals[id] = pending
+        activity.dispatchWebViewEval(id, js, fireAndForget = false)
+        pending.latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        pendingEvals.remove(id)
+        return pending.result
     }
 
     private fun parseOpacityError(error: String?): OpacityError {
