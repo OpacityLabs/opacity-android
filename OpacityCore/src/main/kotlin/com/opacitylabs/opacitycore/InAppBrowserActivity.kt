@@ -26,8 +26,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.webkit.WebViewCompat
-import androidx.webkit.WebViewFeature
 import org.json.JSONObject
 
 class InAppBrowserActivity : AppCompatActivity() {
@@ -99,11 +97,6 @@ class InAppBrowserActivity : AppCompatActivity() {
     private val visitedUrls = mutableListOf<String>()
     private var interceptExtensionEnabled = false
     private val pendingPostBodies = java.util.concurrent.ConcurrentHashMap<String, String>()
-    private var overlayEnabled = false
-    private var overlayScriptsInstalledAtDocumentStart = false
-    private var overlayBootstrapScript: String? = null
-    private var overlayObserverScript: String? = null
-    private var overlayRendererScript: String? = null
 
     private val changeUrlReceiver =
         object : BroadcastReceiver() {
@@ -140,83 +133,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         fun notifyEvalResult(id: String, json: String) {
             OpacityCore.notifyWebViewEvalResult(id, json)
         }
-
-        @JavascriptInterface
-        fun onRenderedHtmlReady(json: String) {
-            try {
-                val payload = JSONObject(json)
-                val mapperJson = payload.optString("mapper_json")
-                if (mapperJson.isBlank()) {
-                    return
-                }
-
-                Handler(Looper.getMainLooper()).post {
-                    presentGeneratedOverlayWithMapperJson(mapperJson)
-                }
-            } catch (e: Exception) {
-                Log.e("Opacity SDK", "Error parsing renderedHtmlReady payload", e)
-            }
-        }
-    }
-
-    private fun buildOverlayBootstrapScript(pagesJson: String): String {
-        val safePagesJson = if (pagesJson.isBlank()) "[]" else pagesJson
-        return """
-            (function() {
-              window.__opacityOverlayPages = $safePagesJson;
-              window.webkit = window.webkit || {};
-              window.webkit.messageHandlers = window.webkit.messageHandlers || {};
-              window.webkit.messageHandlers.renderedHtmlReady = {
-                postMessage: function(payload) {
-                  try {
-                    OpacityNative.onRenderedHtmlReady(JSON.stringify(payload || {}));
-                  } catch (e) {}
-                }
-              };
-            })();
-        """.trimIndent()
-    }
-
-    private fun installOverlayDocumentStartScriptsIfSupported() {
-        if (!overlayEnabled || overlayScriptsInstalledAtDocumentStart) {
-            return
-        }
-
-        val bootstrap = overlayBootstrapScript ?: return
-        val observer = overlayObserverScript ?: return
-
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            return
-        }
-
-        try {
-            WebViewCompat.addDocumentStartJavaScript(webView, bootstrap, setOf("*"))
-            WebViewCompat.addDocumentStartJavaScript(webView, observer, setOf("*"))
-            overlayScriptsInstalledAtDocumentStart = true
-        } catch (e: Exception) {
-            Log.e("Opacity SDK", "Failed to install document-start overlay scripts", e)
-        }
-    }
-
-    private fun injectOverlayScriptsIntoPage(view: WebView?) {
-        if (!overlayEnabled || overlayScriptsInstalledAtDocumentStart) {
-            return
-        }
-
-        val target = view ?: webView
-        overlayBootstrapScript?.let { target.evaluateJavascript(it, null) }
-        overlayObserverScript?.let { target.evaluateJavascript(it, null) }
-    }
-
-    private fun presentGeneratedOverlayWithMapperJson(mapperJson: String) {
-        val template = overlayRendererScript
-        if (template.isNullOrBlank()) {
-            return
-        }
-
-        val mapperLiteral = JSONObject.quote(mapperJson)
-        val script = template.replace("%@", mapperLiteral).replace("%%", "%")
-        dispatchWebViewEval("overlay_${System.currentTimeMillis()}", script, fireAndForget = true)
     }
 
     @SuppressLint("WrongThread", "SetJavaScriptEnabled")
@@ -288,15 +204,6 @@ class InAppBrowserActivity : AppCompatActivity() {
             settings.setSupportMultipleWindows(false)
 
             addJavascriptInterface(OpacityJsBridge(), "OpacityNative")
-        }
-
-        overlayEnabled = OpacityCore.isBrowserOverlayEnabled()
-        if (overlayEnabled) {
-            overlayBootstrapScript =
-                buildOverlayBootstrapScript(OpacityCore.getBrowserOverlayPagesJson())
-            overlayObserverScript = OpacityCore.getBrowserOverlayObserverScript()
-            overlayRendererScript = OpacityCore.getBrowserOverlayRendererScript()
-            installOverlayDocumentStartScriptsIfSupported()
         }
 
         //Uncomment to forward JS console messages to logcat for debugging
@@ -472,8 +379,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                 if (interceptExtensionEnabled) {
                     view?.evaluateJavascript(INTERCEPT_SCRIPT, null)
                 }
-
-                injectOverlayScriptsIntoPage(view)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -482,8 +387,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                     currentUrl = url
                     updateCookiesFromCookieManager(url)
                 }
-
-                injectOverlayScriptsIntoPage(view)
 
                 view?.evaluateJavascript("document.documentElement.outerHTML") { rawResult ->
                     if (rawResult != null && rawResult != "null") {

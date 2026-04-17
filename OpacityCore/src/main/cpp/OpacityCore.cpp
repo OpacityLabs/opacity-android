@@ -73,16 +73,6 @@ jstring string2jstring(JNIEnv *env, const char *str) {
   return (*env).NewStringUTF(str);
 }
 
-static jstring ownedCStringToJString(JNIEnv *env, const char *raw) {
-  if (raw == nullptr) {
-    return env->NewStringUTF("");
-  }
-
-  jstring value = env->NewStringUTF(raw);
-  opacity_core::free_string((char *)raw);
-  return value;
-}
-
 extern "C" void secure_set(const char *key, const char *value) {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
@@ -544,30 +534,4 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getSdkVersions(JNIEnv *env,
   jstring jres = env->NewStringUTF(res);
   //    opacity_core::free_string(res);
   return jres;
-}
-
-extern "C" JNIEXPORT jboolean JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_isBrowserOverlayEnabled(
-    JNIEnv *env, jobject thiz) {
-  return opacity_core::is_browser_overlay_enabled() ? JNI_TRUE : JNI_FALSE;
-}
-
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayPagesJson(
-    JNIEnv *env, jobject thiz) {
-  return ownedCStringToJString(env, opacity_core::get_browser_overlay_pages_json());
-}
-
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayObserverScript(
-    JNIEnv *env, jobject thiz) {
-  return ownedCStringToJString(
-      env, opacity_core::get_browser_overlay_observer_script());
-}
-
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayRendererScript(
-    JNIEnv *env, jobject thiz) {
-  return ownedCStringToJString(
-      env, opacity_core::get_browser_overlay_renderer_script());
 }
