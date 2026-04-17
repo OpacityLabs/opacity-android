@@ -109,9 +109,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "com.opacitylabs.opacitycore.CHANGE_URL") {
-                    val targetUrl = intent.getStringExtra("url")!!
-                    currentUrl = targetUrl
-                    webView.loadUrl(targetUrl)
+                    currentUrl = intent.getStringExtra("url")!!
+                    webView.loadUrl(currentUrl)
                 }
             }
         }
@@ -301,15 +300,15 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
 
         //Uncomment to forward JS console messages to logcat for debugging
-         webView.webChromeClient = object : WebChromeClient() {
-             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                 Log.d(
-                     "Opacity SDK",
-                     "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
-                 )
-                 return true
-             }
-         }
+        // webView.webChromeClient = object : WebChromeClient() {
+        //     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+        //         Log.d(
+        //             "Opacity SDK",
+        //             "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
+        //         )
+        //         return true
+        //     }
+        // }
 
         val headers: Bundle? = intent.getBundleExtra("headers")
         val customUserAgent = headers?.getString("user-agent")
@@ -456,12 +455,7 @@ class InAppBrowserActivity : AppCompatActivity() {
                 currentUrl = url
                 addToVisitedUrls(url)
                 emitNavigationEvent()
-                val scheme = request.url.scheme?.lowercase()
-                val isHttpLike = scheme == "http" || scheme == "https"
-                if (isHttpLike) {
-                    return false
-                }
-                return true
+                return false
             }
 
             override fun onPageStarted(
@@ -714,10 +708,10 @@ class InAppBrowserActivity : AppCompatActivity() {
      * [OpacityJsBridge.notifyEvalResult] → [OpacityCore.notifyWebViewEvalResult].
      */
     fun dispatchWebViewEval(id: String, js: String, fireAndForget: Boolean) {
+        val escapedJs = org.json.JSONObject.quote(js)
         val wrappedJs = if (fireAndForget) {
-            "(function(){\n$js\n})()"
+            "(function(){var AF=Object.getPrototypeOf(async function(){}).constructor;new AF($escapedJs)();})()"
         } else {
-            val escapedJs = org.json.JSONObject.quote(js)
             val escapedId = org.json.JSONObject.quote(id)
             "(function(){" +
                 "var AF=Object.getPrototypeOf(async function(){}).constructor;" +
