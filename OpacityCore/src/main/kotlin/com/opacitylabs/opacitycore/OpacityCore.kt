@@ -301,4 +301,5 @@ object OpacityCore {
     external fun getBrowserOverlayPagesJson(): String
     external fun getBrowserOverlayObserverScript(): String
     external fun getBrowserOverlayRendererScript(): String
+    external fun isBrowserDebugLogsEnabled(): Boolean
 }

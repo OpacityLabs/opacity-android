@@ -571,3 +571,9 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayRendererScript(
   return ownedCStringToJString(
       env, opacity_core::get_browser_overlay_renderer_script());
 }
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_isBrowserDebugLogsEnabled(
+    JNIEnv *env, jobject thiz) {
+  return opacity_core::is_browser_debug_logs_enabled() ? JNI_TRUE : JNI_FALSE;
+}

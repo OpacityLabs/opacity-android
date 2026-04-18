@@ -300,16 +300,19 @@ class InAppBrowserActivity : AppCompatActivity() {
             installOverlayDocumentStartScriptsIfSupported()
         }
 
-        //Uncomment to forward JS console messages to logcat for debugging
-         webView.webChromeClient = object : WebChromeClient() {
-             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                 Log.d(
-                     "Opacity SDK",
-                     "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
-                 )
-                 return true
-             }
-         }
+        // Forward JS console messages to logcat when the active Lua flow opts in via
+        // open_browser({ debug_logs = true }). Flag is reset to false on close_browser.
+        if (OpacityCore.isBrowserDebugLogsEnabled()) {
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    Log.d(
+                        "Opacity SDK",
+                        "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
+                    )
+                    return true
+                }
+            }
+        }
 
         val headers: Bundle? = intent.getBundleExtra("headers")
         val customUserAgent = headers?.getString("user-agent")
