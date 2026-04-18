@@ -26,6 +26,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import org.json.JSONObject
 
 class InAppBrowserActivity : AppCompatActivity() {
@@ -97,13 +99,19 @@ class InAppBrowserActivity : AppCompatActivity() {
     private val visitedUrls = mutableListOf<String>()
     private var interceptExtensionEnabled = false
     private val pendingPostBodies = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private var overlayEnabled = false
+    private var overlayScriptsInstalledAtDocumentStart = false
+    private var overlayBootstrapScript: String? = null
+    private var overlayObserverScript: String? = null
+    private var overlayRendererScript: String? = null
 
     private val changeUrlReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "com.opacitylabs.opacitycore.CHANGE_URL") {
-                    currentUrl = intent.getStringExtra("url")!!
-                    webView.loadUrl(currentUrl)
+                    val targetUrl = intent.getStringExtra("url")!!
+                    currentUrl = targetUrl
+                    webView.loadUrl(targetUrl)
                 }
             }
         }
@@ -133,6 +141,83 @@ class InAppBrowserActivity : AppCompatActivity() {
         fun notifyEvalResult(id: String, json: String) {
             OpacityCore.notifyWebViewEvalResult(id, json)
         }
+
+        @JavascriptInterface
+        fun onRenderedHtmlReady(json: String) {
+            try {
+                val payload = JSONObject(json)
+                val mapperJson = payload.optString("mapper_json")
+                if (mapperJson.isBlank()) {
+                    return
+                }
+
+                Handler(Looper.getMainLooper()).post {
+                    presentGeneratedOverlayWithMapperJson(mapperJson)
+                }
+            } catch (e: Exception) {
+                Log.e("Opacity SDK", "Error parsing renderedHtmlReady payload", e)
+            }
+        }
+    }
+
+    private fun buildOverlayBootstrapScript(pagesJson: String): String {
+        val safePagesJson = if (pagesJson.isBlank()) "[]" else pagesJson
+        return """
+            (function() {
+              window.__opacityOverlayPages = $safePagesJson;
+              window.webkit = window.webkit || {};
+              window.webkit.messageHandlers = window.webkit.messageHandlers || {};
+              window.webkit.messageHandlers.renderedHtmlReady = {
+                postMessage: function(payload) {
+                  try {
+                    OpacityNative.onRenderedHtmlReady(JSON.stringify(payload || {}));
+                  } catch (e) {}
+                }
+              };
+            })();
+        """.trimIndent()
+    }
+
+    private fun installOverlayDocumentStartScriptsIfSupported() {
+        if (!overlayEnabled || overlayScriptsInstalledAtDocumentStart) {
+            return
+        }
+
+        val bootstrap = overlayBootstrapScript ?: return
+        val observer = overlayObserverScript ?: return
+
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            return
+        }
+
+        try {
+            WebViewCompat.addDocumentStartJavaScript(webView, bootstrap, setOf("*"))
+            WebViewCompat.addDocumentStartJavaScript(webView, observer, setOf("*"))
+            overlayScriptsInstalledAtDocumentStart = true
+        } catch (e: Exception) {
+            Log.e("Opacity SDK", "Failed to install document-start overlay scripts", e)
+        }
+    }
+
+    private fun injectOverlayScriptsIntoPage(view: WebView?) {
+        if (!overlayEnabled || overlayScriptsInstalledAtDocumentStart) {
+            return
+        }
+
+        val target = view ?: webView
+        overlayBootstrapScript?.let { target.evaluateJavascript(it, null) }
+        overlayObserverScript?.let { target.evaluateJavascript(it, null) }
+    }
+
+    private fun presentGeneratedOverlayWithMapperJson(mapperJson: String) {
+        val template = overlayRendererScript
+        if (template.isNullOrBlank()) {
+            return
+        }
+
+        val mapperLiteral = JSONObject.quote(mapperJson)
+        val script = template.replace("%@", mapperLiteral).replace("%%", "%")
+        dispatchWebViewEval("overlay_${System.currentTimeMillis()}", script, fireAndForget = true)
     }
 
     @SuppressLint("WrongThread", "SetJavaScriptEnabled")
@@ -206,16 +291,28 @@ class InAppBrowserActivity : AppCompatActivity() {
             addJavascriptInterface(OpacityJsBridge(), "OpacityNative")
         }
 
-        //Uncomment to forward JS console messages to logcat for debugging
-        // webView.webChromeClient = object : WebChromeClient() {
-        //     override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-        //         Log.d(
-        //             "Opacity SDK",
-        //             "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
-        //         )
-        //         return true
-        //     }
-        // }
+        overlayEnabled = OpacityCore.isBrowserOverlayEnabled()
+        if (overlayEnabled) {
+            overlayBootstrapScript =
+                buildOverlayBootstrapScript(OpacityCore.getBrowserOverlayPagesJson())
+            overlayObserverScript = OpacityCore.getBrowserOverlayObserverScript()
+            overlayRendererScript = OpacityCore.getBrowserOverlayRendererScript()
+            installOverlayDocumentStartScriptsIfSupported()
+        }
+
+        // Forward JS console messages to logcat when the active Lua flow opts in via
+        // open_browser({ debug_logs = true }). Flag is reset to false on close_browser.
+        if (OpacityCore.isBrowserDebugLogsEnabled()) {
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    Log.d(
+                        "Opacity SDK",
+                        "JS ${consoleMessage?.messageLevel()}: ${consoleMessage?.message()}"
+                    )
+                    return true
+                }
+            }
+        }
 
         val headers: Bundle? = intent.getBundleExtra("headers")
         val customUserAgent = headers?.getString("user-agent")
@@ -362,7 +459,12 @@ class InAppBrowserActivity : AppCompatActivity() {
                 currentUrl = url
                 addToVisitedUrls(url)
                 emitNavigationEvent()
-                return false
+                val scheme = request.url.scheme?.lowercase()
+                val isHttpLike = scheme == "http" || scheme == "https"
+                if (isHttpLike) {
+                    return false
+                }
+                return true
             }
 
             override fun onPageStarted(
@@ -379,6 +481,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                 if (interceptExtensionEnabled) {
                     view?.evaluateJavascript(INTERCEPT_SCRIPT, null)
                 }
+
+                injectOverlayScriptsIntoPage(view)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -387,6 +491,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                     currentUrl = url
                     updateCookiesFromCookieManager(url)
                 }
+
+                injectOverlayScriptsIntoPage(view)
 
                 view?.evaluateJavascript("document.documentElement.outerHTML") { rawResult ->
                     if (rawResult != null && rawResult != "null") {
@@ -611,10 +717,10 @@ class InAppBrowserActivity : AppCompatActivity() {
      * [OpacityJsBridge.notifyEvalResult] → [OpacityCore.notifyWebViewEvalResult].
      */
     fun dispatchWebViewEval(id: String, js: String, fireAndForget: Boolean) {
-        val escapedJs = org.json.JSONObject.quote(js)
         val wrappedJs = if (fireAndForget) {
-            "(function(){var AF=Object.getPrototypeOf(async function(){}).constructor;new AF($escapedJs)();})()"
+            "(function(){\n$js\n})()"
         } else {
+            val escapedJs = org.json.JSONObject.quote(js)
             val escapedId = org.json.JSONObject.quote(id)
             "(function(){" +
                 "var AF=Object.getPrototypeOf(async function(){}).constructor;" +
