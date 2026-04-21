@@ -18,7 +18,29 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven("https://jitpack.io")
+        maven {
+            url = uri(findRustlsPlatformVerifierMaven())
+            metadataSources.artifact()
+        }
     }
+}
+
+@Suppress("UNCHECKED_CAST")
+fun findRustlsPlatformVerifierMaven(): String {
+    val result = providers.exec {
+        workingDir = File(rootDir, "../")
+        commandLine(
+            "cargo", "metadata", "--format-version", "1",
+            "--filter-platform", "aarch64-linux-android",
+            "--manifest-path", "sdk/Cargo.toml"
+        )
+    }.standardOutput.asText.get()
+
+    val json = groovy.json.JsonSlurper().parseText(result) as Map<String, Any>
+    val packages = json["packages"] as List<Map<String, Any>>
+    val pkg = packages.first { it["name"] == "rustls-platform-verifier-android" }
+    val manifestPath = File(pkg["manifest_path"] as String)
+    return File(manifestPath.parentFile, "maven").path
 }
 
 

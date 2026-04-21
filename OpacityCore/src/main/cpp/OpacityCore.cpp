@@ -475,14 +475,20 @@ android_get_browser_cookies_for_domain(const char *domain) {
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_init(
-    JNIEnv *env, jobject thiz, jstring api_key, jboolean dry_run,
-    jint environment_enum, jboolean show_errors_in_webview) {
+    JNIEnv *env, jobject thiz, jobject context, jstring api_key,
+    jboolean dry_run, jint environment_enum,
+    jboolean show_errors_in_webview) {
   java_object = env->NewGlobalRef(thiz);
   char *err;
   const char *api_key_str = env->GetStringUTFChars(api_key, nullptr);
+  int android_init_result =
+      opacity_core::android_init((void *)env, (void *)context);
+  __android_log_print(ANDROID_LOG_DEBUG, "OpacityCore",
+                      "android_init_result: %d", android_init_result);
+
   int result = opacity_core::opacity_init(api_key_str, dry_run,
-                                  static_cast<int>(environment_enum),
-                                  show_errors_in_webview, &err);
+                                          static_cast<int>(environment_enum),
+                                          show_errors_in_webview, &err);
   if (result != opacity_core::OPACITY_OK) {
     jclass exceptionClass = env->FindClass("java/lang/Exception");
     env->ThrowNew(exceptionClass, err);

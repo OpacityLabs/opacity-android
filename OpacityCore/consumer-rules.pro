@@ -1,2 +1,3 @@
 -keep class com.opacitylabs.opacitycore.** { *; }
 -keepclassmembers class com.opacitylabs.opacitycore.** { *; }
+-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }

@@ -95,3 +95,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keeps rustls-platform-verifier deps from being stripped
+-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }
