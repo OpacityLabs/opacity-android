@@ -170,6 +170,8 @@ extern const int32_t OPACITY_ENVIRONMENT_STAGING;
 
 extern const int32_t OPACITY_ENVIRONMENT_PRODUCTION;
 
+int32_t android_init(void *raw_env, void *raw_context);
+
 int32_t opacity_init(const char *api_key_str,
                      bool dry_run,
                      int32_t backend_environment,
