@@ -120,15 +120,15 @@ class MainActivity : ComponentActivity() {
                         Button(
                             onClick = {
                                 lifecycleScope.launch {
-                                    var params: Map<String, Any>? = null
+                                    var params: Map<String, Any?>? = null
 
                                     if (!paramsInput.value.isBlank()) {
-                                        params =
-                                            JsonConverter.parseJsonElementToAny(
-                                                Json.parseToJsonElement(
-                                                    paramsInput.value
-                                                )
-                                            ) as Map<String, Any>?
+                                        @Suppress("UNCHECKED_CAST")
+                                        params = JsonConverter.parseJsonElementToAny(
+                                            Json.parseToJsonElement(
+                                                paramsInput.value
+                                            )
+                                        ) as Map<String, Any?>?
                                     }
 
                                     val res = OpacityCore.get(flowInput.value, params)
