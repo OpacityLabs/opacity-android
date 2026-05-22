@@ -55,7 +55,7 @@ class UITests {
     @Test
     fun testSuccessFlowButton() {
         // Check if button is displayed
-        composeTestRule.waitUntil(timeoutMillis = 5000) {
+        composeTestRule.waitUntil(timeoutMillis = 10000) {
             composeTestRule.onAllNodesWithText("Test flow always succeeds").fetchSemanticsNodes()
                 .isNotEmpty()
         }
@@ -71,10 +71,10 @@ class UITests {
             timeoutMillis = 30000
         )
 
-        Thread.sleep(10000)
+        Thread.sleep(2000)
 
         // Now check for the dialog
-        composeTestRule.waitUntil(timeoutMillis = 20_000) {
+        composeTestRule.waitUntil(timeoutMillis = 30_000) {
             composeTestRule.onAllNodesWithText("Success").fetchSemanticsNodes().isNotEmpty() &&
                     composeTestRule.onAllNodesWithText("Test flow completed successfully!")
                         .fetchSemanticsNodes().isNotEmpty() &&
