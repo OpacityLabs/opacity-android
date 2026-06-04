@@ -160,24 +160,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
     }
 
-    private fun buildOverlayBootstrapScript(pagesJson: String): String {
-        val safePagesJson = if (pagesJson.isBlank()) "[]" else pagesJson
-        return """
-            (function() {
-              window.__opacityOverlayPages = $safePagesJson;
-              window.webkit = window.webkit || {};
-              window.webkit.messageHandlers = window.webkit.messageHandlers || {};
-              window.webkit.messageHandlers.renderedHtmlReady = {
-                postMessage: function(payload) {
-                  try {
-                    OpacityNative.onRenderedHtmlReady(JSON.stringify(payload || {}));
-                  } catch (e) {}
-                }
-              };
-            })();
-        """.trimIndent()
-    }
-
     private fun installOverlayDocumentStartScriptsIfSupported() {
         if (!overlayEnabled || overlayScriptsInstalledAtDocumentStart) {
             return
@@ -191,8 +173,9 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
 
         try {
-            WebViewCompat.addDocumentStartJavaScript(webView, bootstrap, setOf("*"))
-            WebViewCompat.addDocumentStartJavaScript(webView, observer, setOf("*"))
+            val overlayOriginRules = setOf("*")
+            WebViewCompat.addDocumentStartJavaScript(webView, bootstrap, overlayOriginRules)
+            WebViewCompat.addDocumentStartJavaScript(webView, observer, overlayOriginRules)
             overlayScriptsInstalledAtDocumentStart = true
         } catch (e: Exception) {
             Log.e("Opacity SDK", "Failed to install document-start overlay scripts", e)
@@ -293,8 +276,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         overlayEnabled = OpacityCore.isBrowserOverlayEnabled()
         if (overlayEnabled) {
-            overlayBootstrapScript =
-                buildOverlayBootstrapScript(OpacityCore.getBrowserOverlayPagesJson())
+            overlayBootstrapScript = OpacityCore.getBrowserOverlayBootstrapScript()
             overlayObserverScript = OpacityCore.getBrowserOverlayObserverScript()
             overlayRendererScript = OpacityCore.getBrowserOverlayRendererScript()
             installOverlayDocumentStartScriptsIfSupported()
@@ -813,4 +795,5 @@ class InAppBrowserActivity : AppCompatActivity() {
 })();
 """
     }
+
 }
