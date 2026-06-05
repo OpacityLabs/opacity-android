@@ -1,7 +1,6 @@
 #include "sdk.h"
 #include <android/log.h>
 #include <arpa/inet.h>
-#include <dlfcn.h>
 #include <future>
 #include <ifaddrs.h>
 #include <jni.h>
@@ -84,16 +83,8 @@ static jstring ownedCStringToJString(JNIEnv *env, const char *raw) {
   return value;
 }
 
-using OptionalCStringGetter = const char *(*)();
-
-static jstring optionalCoreCStringToJString(JNIEnv *env, const char *symbol) {
-  auto getter = reinterpret_cast<OptionalCStringGetter>(dlsym(RTLD_DEFAULT, symbol));
-  if (getter == nullptr) {
-    return env->NewStringUTF("");
-  }
-
-  return ownedCStringToJString(env, getter());
-}
+extern "C" const char *get_browser_overlay_bootstrap_script(void)
+    __attribute__((weak));
 
 extern "C" void secure_set(const char *key, const char *value) {
   JNIEnv *env = GetJniEnv();
@@ -565,12 +556,6 @@ Java_com_opacitylabs_opacitycore_OpacityCore_isBrowserOverlayEnabled(
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayPagesJson(
-    JNIEnv *env, jobject thiz) {
-  return ownedCStringToJString(env, opacity_core::get_browser_overlay_pages_json());
-}
-
-extern "C" JNIEXPORT jstring JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayObserverScript(
     JNIEnv *env, jobject thiz) {
   return ownedCStringToJString(
@@ -580,8 +565,11 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayObserverScript(
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayBootstrapScript(
     JNIEnv *env, jobject thiz) {
-  return optionalCoreCStringToJString(env,
-                                      "get_browser_overlay_bootstrap_script");
+  if (get_browser_overlay_bootstrap_script == nullptr) {
+    return env->NewStringUTF("");
+  }
+
+  return ownedCStringToJString(env, get_browser_overlay_bootstrap_script());
 }
 
 extern "C" JNIEXPORT jstring JNICALL
