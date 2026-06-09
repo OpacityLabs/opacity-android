@@ -83,6 +83,9 @@ static jstring ownedCStringToJString(JNIEnv *env, const char *raw) {
   return value;
 }
 
+extern "C" const char *get_browser_overlay_bootstrap_script(void)
+    __attribute__((weak));
+
 extern "C" void secure_set(const char *key, const char *value) {
   JNIEnv *env = GetJniEnv();
   // Get the Kotlin class
@@ -553,16 +556,20 @@ Java_com_opacitylabs_opacitycore_OpacityCore_isBrowserOverlayEnabled(
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayPagesJson(
-    JNIEnv *env, jobject thiz) {
-  return ownedCStringToJString(env, opacity_core::get_browser_overlay_pages_json());
-}
-
-extern "C" JNIEXPORT jstring JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayObserverScript(
     JNIEnv *env, jobject thiz) {
   return ownedCStringToJString(
       env, opacity_core::get_browser_overlay_observer_script());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_getBrowserOverlayBootstrapScript(
+    JNIEnv *env, jobject thiz) {
+  if (get_browser_overlay_bootstrap_script == nullptr) {
+    return env->NewStringUTF("");
+  }
+
+  return ownedCStringToJString(env, get_browser_overlay_bootstrap_script());
 }
 
 extern "C" JNIEXPORT jstring JNICALL

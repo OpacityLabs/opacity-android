@@ -298,8 +298,8 @@ object OpacityCore {
     external fun getSdkVersions(): String
     external fun emitWebviewEvent(eventJson: String)
     external fun isBrowserOverlayEnabled(): Boolean
-    external fun getBrowserOverlayPagesJson(): String
     external fun getBrowserOverlayObserverScript(): String
+    external fun getBrowserOverlayBootstrapScript(): String
     external fun getBrowserOverlayRendererScript(): String
     external fun isBrowserDebugLogsEnabled(): Boolean
 }
