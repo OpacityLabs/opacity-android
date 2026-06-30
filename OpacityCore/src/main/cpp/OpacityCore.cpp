@@ -79,7 +79,7 @@ static jstring ownedCStringToJString(JNIEnv *env, const char *raw) {
   }
 
   jstring value = env->NewStringUTF(raw);
-  opacity_core::free_string((char *)raw);
+  opacity_core::opacity_free_string((char *)raw);
   return value;
 }
 
@@ -514,11 +514,11 @@ jobject createOpacityResponse(JNIEnv *env, int status, char *res, char *err) {
   if (status == opacity_core::OPACITY_OK) {
     jres = env->NewStringUTF(res);
     jerr = env->NewStringUTF(nullptr);
-    opacity_core::free_string(res);
+    opacity_core::opacity_free_string(res);
   } else {
     jres = env->NewStringUTF(nullptr);
     jerr = env->NewStringUTF(err);
-    opacity_core::free_string(err);
+    opacity_core::opacity_free_string(err);
   }
 
   opacityResponse =
