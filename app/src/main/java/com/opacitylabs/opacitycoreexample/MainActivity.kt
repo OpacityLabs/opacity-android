@@ -75,6 +75,8 @@ class MainActivity : ComponentActivity() {
 
         OpacityCore.setContext(this)
         OpacityCore.initialize(opacityApiKey, false, OpacityCore.Environment.PRODUCTION, false)
+        // Example on how to initialize open telemetry
+        // OpacityCore.initializeOpenTelemetry("an/endpoint", "123", "a token")
 
         Log.d("MainActivity", "Opacity SDK initialized and MainActivity loaded")
 

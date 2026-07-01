@@ -59,6 +59,15 @@ object OpacityCore {
     }
 
     @JvmStatic
+    fun initializeOpenTelemetry(
+        openTelemetryEndpoint: String,
+        grafanaInstanceId: String,
+        grafanaApiToken: String
+    ): Int {
+        return nativeInitializeOpenTelemetry(openTelemetryEndpoint, grafanaInstanceId, grafanaApiToken)
+    }
+
+    @JvmStatic
     fun setContext(context: Context) {
         appContext = context
         cryptoManager = CryptoManager(appContext.applicationContext)
@@ -293,6 +302,8 @@ object OpacityCore {
         environment: Int,
         showErrorsInWebView: Boolean
     ): Int
+
+    private external fun nativeInitializeOpenTelemetry(openTelemetryEndpoint: String, grafanaInstanceId: String, grafanaApiToken: String): Int
 
     private external fun getNative(name: String, params: String?): OpacityResponse
     external fun getSdkVersions(): String
