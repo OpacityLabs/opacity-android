@@ -333,7 +333,7 @@ extern "C" const char *android_get_device_cpu() {
   jclass jOpacityCore = env->GetObjectClass(java_object);
   jmethodID method =
       env->GetMethodID(jOpacityCore, "getDeviceCpu", "()Ljava/lang/String;");
-  jstring jCpu = (jstring)env->CallObjectMethod(java_object, method);
+  auto jCpu = (jstring)env->CallObjectMethod(java_object, method);
   if (jCpu == nullptr) {
     return strdup("");
   }
@@ -349,7 +349,7 @@ extern "C" const char *android_get_device_codename() {
   jclass jOpacityCore = env->GetObjectClass(java_object);
   jmethodID method = env->GetMethodID(jOpacityCore, "getDeviceCodename",
                                       "()Ljava/lang/String;");
-  jstring jCodename = (jstring)env->CallObjectMethod(java_object, method);
+  auto jCodename = (jstring)env->CallObjectMethod(java_object, method);
   if (jCodename == nullptr) {
     return strdup("");
   }
@@ -365,7 +365,7 @@ extern "C" const char *android_get_bootloader() {
   jclass jOpacityCore = env->GetObjectClass(java_object);
   jmethodID method = env->GetMethodID(jOpacityCore, "getBootloader",
                                       "()Ljava/lang/String;");
-  jstring jBootloader = (jstring)env->CallObjectMethod(java_object, method);
+  auto jBootloader = (jstring)env->CallObjectMethod(java_object, method);
   if (jBootloader == nullptr) {
     return strdup("");
   }
@@ -381,7 +381,7 @@ extern "C" const char *android_get_radio() {
   jclass jOpacityCore = env->GetObjectClass(java_object);
   jmethodID method = env->GetMethodID(jOpacityCore, "getRadio",
                                       "()Ljava/lang/String;");
-  jstring jRadio = (jstring)env->CallObjectMethod(java_object, method);
+  auto jRadio = (jstring)env->CallObjectMethod(java_object, method);
   if (jRadio == nullptr) {
     return strdup("");
   }
@@ -397,7 +397,7 @@ extern "C" const char *android_get_build_time() {
   jclass jOpacityCore = env->GetObjectClass(java_object);
   jmethodID method = env->GetMethodID(jOpacityCore, "getBuildTime",
                                       "()Ljava/lang/String;");
-  jstring jBuildTime = (jstring)env->CallObjectMethod(java_object, method);
+  auto jBuildTime = (jstring)env->CallObjectMethod(java_object, method);
   if (jBuildTime == nullptr) {
     return strdup("");
   }
@@ -444,7 +444,7 @@ extern "C" const char *android_eval_js(const char *js,
   jmethodID method = env->GetMethodID(
       jOpacityCore, "evalJs", "(Ljava/lang/String;J)Ljava/lang/String;");
   jstring jjs = env->NewStringUTF(js);
-  jlong timeout_ms = (jlong)(timeout_in_seconds * 1000.0);
+  auto timeout_ms = (jlong)(timeout_in_seconds * 1000.0);
   auto result =
       (jstring)env->CallObjectMethod(java_object, method, jjs, timeout_ms);
   env->DeleteLocalRef(jjs);
@@ -486,6 +486,33 @@ Java_com_opacitylabs_opacitycore_OpacityCore_init(
   int result = opacity_core::opacity_init(api_key_str, dry_run,
                                   static_cast<int>(environment_enum),
                                   show_errors_in_webview, &err);
+  if (result != opacity_core::OPACITY_OK) {
+    jclass exceptionClass = env->FindClass("java/lang/Exception");
+    env->ThrowNew(exceptionClass, err);
+  }
+
+  return result;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_opacitylabs_opacitycore_OpacityCore_nativeInitializeOpenTelemetry(
+        JNIEnv *env,
+        jobject thiz,
+        jstring j_open_telemetry_endpoint,
+        jstring j_grafana_instance_id,
+        jstring j_grafana_api_token
+        ) {
+  java_object = env->NewGlobalRef(thiz);
+  char *err;
+  const char *open_telemetry_endpoint = env->GetStringUTFChars(j_open_telemetry_endpoint, nullptr);
+  const char *grafana_instance_id = env->GetStringUTFChars(j_grafana_instance_id, nullptr);
+  const char *grafana_api_token = env->GetStringUTFChars(j_grafana_api_token, nullptr);
+
+  int result = opacity_core::opacity_initialize_open_telemetry(
+          open_telemetry_endpoint,
+          grafana_instance_id,
+          grafana_api_token, &err);
+
   if (result != opacity_core::OPACITY_OK) {
     jclass exceptionClass = env->FindClass("java/lang/Exception");
     env->ThrowNew(exceptionClass, err);
