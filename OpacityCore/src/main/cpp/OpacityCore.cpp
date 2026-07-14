@@ -558,12 +558,22 @@ extern "C" JNIEXPORT jobject JNICALL
 Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
                                                        jobject thiz,
                                                        jstring name,
-                                                       jstring params) {
+                                                       jstring params,
+                                                       jstring traceparent,
+                                                       jstring tracestate) {
   char *res, *err;
   const char *name_str = env->GetStringUTFChars(name, nullptr);
   const char *params_str =
       params != nullptr ? env->GetStringUTFChars(params, nullptr) : nullptr;
-  int status = opacity_core::opacity_get(name_str, params_str, &res, &err);
+  // Optional W3C trace context; null -> standalone per-flow trace.
+  const char *traceparent_str =
+      traceparent != nullptr ? env->GetStringUTFChars(traceparent, nullptr)
+                             : nullptr;
+  const char *tracestate_str =
+      tracestate != nullptr ? env->GetStringUTFChars(tracestate, nullptr)
+                            : nullptr;
+  int status = opacity_core::opacity_get(name_str, params_str, traceparent_str,
+                                         tracestate_str, &res, &err);
   return createOpacityResponse(env, status, res, err);
 }
 

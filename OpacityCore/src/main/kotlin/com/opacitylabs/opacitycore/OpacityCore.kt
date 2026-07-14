@@ -275,14 +275,19 @@ object OpacityCore {
     }
 
     @JvmStatic
-    suspend fun get(name: String, params: Map<String, Any?>?): Result<Map<String, Any?>> {
+    suspend fun get(
+        name: String,
+        params: Map<String, Any?>?,
+        traceparent: String? = null,
+        tracestate: String? = null
+    ): Result<Map<String, Any?>> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let {
                 val jsonElement = mapToJsonElement(it)
                 Json.encodeToString(jsonElement)
             }
 
-            val res = getNative(name, paramsString)
+            val res = getNative(name, paramsString, traceparent, tracestate)
             if (res.status != 0) {
                 return@withContext Result.failure(parseOpacityError(res.err))
             }
@@ -305,7 +310,12 @@ object OpacityCore {
 
     private external fun nativeInitializeOpenTelemetry(openTelemetryEndpoint: String, grafanaInstanceId: String, grafanaApiToken: String): Int
 
-    private external fun getNative(name: String, params: String?): OpacityResponse
+    private external fun getNative(
+        name: String,
+        params: String?,
+        traceparent: String?,
+        tracestate: String?
+    ): OpacityResponse
     external fun getSdkVersions(): String
     external fun emitWebviewEvent(eventJson: String)
     external fun isBrowserOverlayEnabled(): Boolean
