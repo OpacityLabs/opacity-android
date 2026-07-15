@@ -565,15 +565,22 @@ Java_com_opacitylabs_opacitycore_OpacityCore_getNative(JNIEnv *env,
   const char *name_str = env->GetStringUTFChars(name, nullptr);
   const char *params_str =
       params != nullptr ? env->GetStringUTFChars(params, nullptr) : nullptr;
-  // Optional W3C trace context; null -> standalone per-flow trace.
+  // Optional W3C trace context. A null traceparent runs the plain
+  // `opacity_get` (standalone per-flow trace); a non-null one runs
+  // `opacity_get_with_context` to join the caller's trace.
   const char *traceparent_str =
       traceparent != nullptr ? env->GetStringUTFChars(traceparent, nullptr)
                              : nullptr;
   const char *tracestate_str =
       tracestate != nullptr ? env->GetStringUTFChars(tracestate, nullptr)
                             : nullptr;
-  int status = opacity_core::opacity_get(name_str, params_str, traceparent_str,
-                                         tracestate_str, &res, &err);
+  int status;
+  if (traceparent_str != nullptr) {
+    status = opacity_core::opacity_get_with_context(
+        name_str, params_str, traceparent_str, tracestate_str, &res, &err);
+  } else {
+    status = opacity_core::opacity_get(name_str, params_str, &res, &err);
+  }
   return createOpacityResponse(env, status, res, err);
 }
 

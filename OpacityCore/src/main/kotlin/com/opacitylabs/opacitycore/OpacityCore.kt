@@ -277,9 +277,30 @@ object OpacityCore {
     @JvmStatic
     suspend fun get(
         name: String,
+        params: Map<String, Any?>?
+    ): Result<Map<String, Any?>> {
+        return runGet(name, params, null, null)
+    }
+
+    /**
+     * Runs the flow joined to the caller's W3C trace. [traceparent] is required;
+     * [tracestate] is optional (W3C allows it to be absent).
+     */
+    @JvmStatic
+    suspend fun getWithContext(
+        name: String,
         params: Map<String, Any?>?,
-        traceparent: String? = null,
+        traceparent: String,
         tracestate: String? = null
+    ): Result<Map<String, Any?>> {
+        return runGet(name, params, traceparent, tracestate)
+    }
+
+    private suspend fun runGet(
+        name: String,
+        params: Map<String, Any?>?,
+        traceparent: String?,
+        tracestate: String?
     ): Result<Map<String, Any?>> {
         return withContext(Dispatchers.IO) {
             val paramsString = params?.let {
